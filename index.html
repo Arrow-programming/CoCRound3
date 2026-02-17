@@ -919,7 +919,7 @@
                                 }
                             }
 
-                            if (component.length >= 2) {
+                            if (component.length >= 3) {
                                 //limit match removal to a maximum of 3 tiles per connected component
                                 const toAdd = component.slice(0, 3);
                                 for (const tile of toAdd) matched.push(tile);
@@ -1008,7 +1008,6 @@
                             if (this.tiles[row][col] === null) {
                                 const colorIndex = Math.floor(Math.random() * tileColors.length);
                                 const tile = new Tile(col, row, colorIndex);
-                                //start above the board
                                 tile.y = this.boardY - this.tileSize;
                                 tile.targetY = this.boardY + row * this.tileSize + this.tileSize / 2;
                                 tile.targetX = this.boardX + col * this.tileSize + this.tileSize / 2;
@@ -1017,11 +1016,7 @@
                             }
                         }
                     }
-                    
-                    //check for cascade matches note to self: don't use setTimeout it is slow
-                    setTimeout(() => {
-                        this.handleMatches();
-                    }, 400);
+
                 }
 
                 /**
@@ -1164,7 +1159,8 @@
                     if (pooledThisFrame.length > 0) {
                         this.applyGravity();
                         this.fillGaps();
-                        this.swapInProgress = false;
+                        //don't interupt 
+                        this.swapInProgress = true;  
                     }
                     
                     //handle invalid swap completion
