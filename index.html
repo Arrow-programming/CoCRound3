@@ -67,7 +67,7 @@
             this.arrowX = width / 2;
             this.textFade = 0;
         }
-	    run() {
+        run() {
             document.getElementById("interface").style.display = "none";
             document.getElementById("overlay").style.display = "none";
             ctx.lineJoin = "round";
@@ -80,19 +80,19 @@
                     y: -25,
                     sz: 50
                 });
-                for(var i = 0; i < 3; i ++){
-                    var b = random(random(random(-70,0),0),random(0, random(0, 70)));
+                for (var i = 0; i < 3; i++) {
+                    var b = random(random(random(-70, 0), 0), random(0, random(0, 70)));
                     this.spdLns.push({
                         x: width / 2 + b,
                         y: height / 2 + Math.abs(b),
                         sz: 40
                     });
                 }
-            }else if(this.prog > 200 && this.prog < 250){
-                this.arrowX = lerp(this.arrowX, width/2 - 80, 0.1);
-            }else if(this.prog > 250 && this.prog < 320){
+            } else if (this.prog > 200 && this.prog < 250) {
+                this.arrowX = lerp(this.arrowX, width / 2 - 80, 0.1);
+            } else if (this.prog > 250 && this.prog < 320) {
                 this.textFade = lerp(this.textFade, 255, 0.05);
-            }else if(this.prog > 360){
+            } else if (this.prog > 360) {
                 //replace transition code as needed :)
                 window.scene = "menu";
                 //force menu creation immediately when intro finishes
@@ -100,7 +100,7 @@
                     createMenu();
                 }
             }
-            
+
             for (var i = 0; i < this.spdLns.length; i++) {
                 var a = this.spdLns[i];
                 ctx.fillStyle = "rgba(245, 245, 245, 1)"
@@ -113,7 +113,7 @@
             ctx.save();
             ctx.translate(this.arrowX, height / 2);
             ctx.lineWidth = 5;
-            ctx.strokeStyle = `rgba(255, 255, 255, ${this.textFade/255})`;	
+            ctx.strokeStyle = `rgba(255, 255, 255, ${this.textFade/255})`;
             ctx.fillStyle = `rgba(255, 255, 255, ${1 - this.textFade/255})`;
             ctx.beginPath();
             ctx.lineTo(-50, 50);
@@ -124,102 +124,101 @@
             ctx.stroke();
             ctx.fill();
             ctx.closePath();
-            
+
             ctx.save();
             ctx.translate(-100, -200);
-            
+
             ctx.beginPath();
-            ctx.lineTo(161,237);
-            ctx.bezierCurveTo(162,211,162,207,159,203);
-            ctx.lineTo(161,208);
-            ctx.bezierCurveTo(166,201,170,200,176,208);
+            ctx.lineTo(161, 237);
+            ctx.bezierCurveTo(162, 211, 162, 207, 159, 203);
+            ctx.lineTo(161, 208);
+            ctx.bezierCurveTo(166, 201, 170, 200, 176, 208);
             ctx.stroke();
             ctx.closePath();
-            
-            
+
+
             ctx.beginPath();
-            ctx.lineTo(190,238);
-            ctx.bezierCurveTo(191,210,191,210,188,202);
-            ctx.lineTo(192,206);
-            ctx.bezierCurveTo(196,203,200,201,207,211);
+            ctx.lineTo(190, 238);
+            ctx.bezierCurveTo(191, 210, 191, 210, 188, 202);
+            ctx.lineTo(192, 206);
+            ctx.bezierCurveTo(196, 203, 200, 201, 207, 211);
             ctx.stroke();
             ctx.closePath();
-             
-             
-            
+
+
             ctx.beginPath();
-            ctx.lineTo(224,206);
-            ctx.bezierCurveTo(210,213,210,225,224,234);
-            ctx.bezierCurveTo(241,224,237,210,223,206);
+            ctx.lineTo(224, 206);
+            ctx.bezierCurveTo(210, 213, 210, 225, 224, 234);
+            ctx.bezierCurveTo(241, 224, 237, 210, 223, 206);
             ctx.stroke();
             ctx.closePath();
-            
-            
+
+
             ctx.beginPath();
-            ctx.lineTo(247,204);
-            ctx.bezierCurveTo(260,241,260,241,270,208);
-            ctx.bezierCurveTo(279,241,279,241,293,204);
+            ctx.lineTo(247, 204);
+            ctx.bezierCurveTo(260, 241, 260, 241, 270, 208);
+            ctx.bezierCurveTo(279, 241, 279, 241, 293, 204);
             ctx.stroke();
             ctx.closePath();
-            
-            
+
+
             ctx.beginPath();
-            ctx.lineTo(136,168);
-            ctx.bezierCurveTo(140,171,150,169,154,171);
+            ctx.lineTo(136, 168);
+            ctx.bezierCurveTo(140, 171, 150, 169, 154, 171);
             ctx.stroke();
             ctx.closePath();
-            
-            
+
+
             ctx.beginPath();
-            ctx.lineTo(142,158);
-            ctx.bezierCurveTo(143,168,143,178,145,191);
-                            ctx.stroke();
-            ctx.closePath();
-            
-            
-            ctx.beginPath();
-            ctx.lineTo(158,176);
-            ctx.bezierCurveTo(165,178,173,178,181,177);
-            ctx.bezierCurveTo(170,159,168,159,157,177);
-            ctx.bezierCurveTo(168,192,168,192,179,184);
+            ctx.lineTo(142, 158);
+            ctx.bezierCurveTo(143, 168, 143, 178, 145, 191);
             ctx.stroke();
             ctx.closePath();
-            
+
+
             ctx.beginPath();
-            ctx.lineTo(213,188);
-            ctx.bezierCurveTo(208,183,212,165,199,168);
-            ctx.bezierCurveTo(186,169,187,189,195,190);
-            ctx.bezierCurveTo(202,193,206,185,207,182);
+            ctx.lineTo(158, 176);
+            ctx.bezierCurveTo(165, 178, 173, 178, 181, 177);
+            ctx.bezierCurveTo(170, 159, 168, 159, 157, 177);
+            ctx.bezierCurveTo(168, 192, 168, 192, 179, 184);
             ctx.stroke();
             ctx.closePath();
-            
-            
+
             ctx.beginPath();
-            ctx.lineTo(223,191);
-            ctx.bezierCurveTo(230,159,230,159,238,192);
-            ctx.bezierCurveTo(250,160,250,160,257,191);
+            ctx.lineTo(213, 188);
+            ctx.bezierCurveTo(208, 183, 212, 165, 199, 168);
+            ctx.bezierCurveTo(186, 169, 187, 189, 195, 190);
+            ctx.bezierCurveTo(202, 193, 206, 185, 207, 182);
+            ctx.stroke();
+            ctx.closePath();
+
+
+            ctx.beginPath();
+            ctx.lineTo(223, 191);
+            ctx.bezierCurveTo(230, 159, 230, 159, 238, 192);
+            ctx.bezierCurveTo(250, 160, 250, 160, 257, 191);
             ctx.stroke();
             ctx.closePath();
             ctx.restore();
             ctx.restore();
-            
+
             ctx.lineJoin = "miter";
         }
     }
-	let intro = new Intro();
-    
-    
+    let intro = new Intro();
+
+
 
     let roundError = 1;
 
     //this.drones
     let debugMode = !true;
-    
-    
-    
-    
+
+
+
+
     window.scene = "load";
-    
+
     /**
      * Convert DOM screen coordinates to canvas (world) coordinates taking CSS
      * layout into account.
@@ -230,24 +229,24 @@
     function screenToWorld(screenX, screenY) {
         //get canvas position and dimensions
         const rect = canvas.getBoundingClientRect();
-        
+
         //convert screen coords to canvas coords
         const canvasX = screenX - rect.left;
         const canvasY = screenY - rect.top;
-        
-        return { 
-            x: canvasX, 
+
+        return {
+            x: canvasX,
             y: canvasY
         };
     }
-    
+
     //the game
     const Application = (function() {
         const App = function(config) {
             //self represent
             this.app = App;
-            
-            
+
+
             /**
              * Represents a single tile in the grid. Stores visual state and
              * provides simple update/draw helpers for smooth animation.
@@ -277,7 +276,12 @@
                     this.beingDragged = false;
 
                     //side indicators
-                    this.sides = { left: false, right: false, up: false, down: false };
+                    this.sides = {
+                        left: false,
+                        right: false,
+                        up: false,
+                        down: false
+                    };
                     //randomize
                     const sidesArr = ["left", "right", "up", "down"];
                     let count = Math.floor(Math.random() * 4) + 1;
@@ -318,7 +322,7 @@
                     if (this.beingDragged) return;
 
                     //move with predictable per-axis speed to avoid jerk
-                    const maxSpeedY = 1200; 
+                    const maxSpeedY = 1200;
                     const maxSpeedX = 1000;
 
                     const dy = this.targetY - this.y;
@@ -336,8 +340,7 @@
                         this.x = this.targetX;
                         this.y = this.targetY;
                         this.isMoving = false;
-                    } 
-                    else {
+                    } else {
                         this.isMoving = true;
                     }
 
@@ -392,7 +395,7 @@
                     ctx.stroke();
 
                     //draw small red indicators on sides
-                    ctx.fillStyle = "#D9534F"; 
+                    ctx.fillStyle = "#D9534F";
                     const indLen = tileSize * 0.22;
                     const indW = Math.max(3, Math.round(tileSize * 0.06));
                     if (this.sides.up) {
@@ -412,7 +415,7 @@
                     ctx.globalAlpha = 1;
                 }
             }
-            
+
             /**
              * Small left-side pool of tiles (spare tiles). Manages positions for
              * pooled tiles and supports dragging from the pool.
@@ -451,8 +454,8 @@
                 getTarget(slot) {
                     const x = this.left + slot * this.spacing + this.tileSize / 2;
                     const y = this.top + this.tileSize / 2;
-                    return { 
-                        x, 
+                    return {
+                        x,
                         y
                     };
                 }
@@ -531,8 +534,11 @@
                     const rad = this.tileSize / 2;
 
                     //check tiles in backwards order, because that's front to back
-                    for (let i = this.tiles.length - 1; i >= 0; i --) {
-                        const {x: tileX, y: tileY} = this.getTarget(i);
+                    for (let i = this.tiles.length - 1; i >= 0; i--) {
+                        const {
+                            x: tileX,
+                            y: tileY
+                        } = this.getTarget(i);
                         if (
                             x > tileX - rad && x < tileX + rad &&
                             y > tileY - rad && y < tileY + rad
@@ -549,23 +555,38 @@
                  * @returns {void}
                  */
                 handleInput() {
-                    const { screenX, screenY, down, wasDown } = mouse;
+                    const {
+                        screenX,
+                        screenY,
+                        down,
+                        wasDown
+                    } = mouse;
                     const clickHappened = down && !wasDown;
                     const released = !down && wasDown;
 
                     if (clickHappened) {
-                        const {x: scaledX, y: scaledY} = screenToWorld(screenX, screenY);
+                        const {
+                            x: scaledX,
+                            y: scaledY
+                        } = screenToWorld(screenX, screenY);
                         const tile = this.getTileAtPos(scaledX, scaledY);
                         if (tile) {
                             this.draggedTile = tile;
                             this.draggedTile.beingDragged = true;
-                            this.draggedTileOriginal = { x: tile.x, y: tile.y, row: tile.row, col: tile.col };
+                            this.draggedTileOriginal = {
+                                x: tile.x,
+                                y: tile.y,
+                                row: tile.row,
+                                col: tile.col
+                            };
                             this.dragOffsetX = scaledX - tile.x;
                             this.dragOffsetY = scaledY - tile.y;
                         }
-                    } 
-                    else if (this.draggedTile && down) {
-                        const {x: scaledX, y: scaledY} = screenToWorld(screenX, screenY);
+                    } else if (this.draggedTile && down) {
+                        const {
+                            x: scaledX,
+                            y: scaledY
+                        } = screenToWorld(screenX, screenY);
                         const targetX = scaledX - this.dragOffsetX;
                         const targetY = scaledY - this.dragOffsetY;
                         [this.draggedTile.x, this.draggedTile.y] = [targetX, targetY];
@@ -578,8 +599,7 @@
                         const sizeProgress = Math.min(distFromStart / maxDragDist, 1);
                         this.draggedTile.scale = 1 + (sizeProgress * 0.3);
 
-                    } 
-                    else if (released && this.draggedTile) {
+                    } else if (released && this.draggedTile) {
                         let placed = false;
 
                         //use window.App.rightGrid
@@ -588,11 +608,10 @@
                                 this.draggedTile.x, this.draggedTile.y
                             );
                             if (placeCell) {
-                                const foundCell = window.App.rightGrid.tiles.find(
-                                    cell => cell.row == placeCell.row && cell.col == placeCell.col
-                                );
-                                if (!foundCell) {
-                                    window.App.rightGrid.placeTile(this.draggedTile, placeCell.col, placeCell.row);
+                                //try to place into the grid
+                                const ok = window.App.rightGrid.placeTile(this.draggedTile, placeCell.col, placeCell.row);
+                                if (ok) {
+                                    //remove from pool only when placement succeeded
                                     this.remove(this.draggedTile);
                                     placed = true;
                                     this.draggedTile.beingDragged = false;
@@ -601,6 +620,7 @@
                                     this.draggedTileOriginal = null;
                                     return;
                                 }
+                                //else tile goes to in pool
                             }
                         }
 
@@ -639,35 +659,36 @@
                             this.invalidDropTile = null;
                             this.invalidDropTime = 0;
                         }
-                    }/*
+                    }
+                    /*
 
-                    //if this was a user-initiated swap, check its result after the visual swap
-                    if (this.invaid) {
-                        const matches = this.findMatches();
-                        if (matches.length > 0) {
-                            //valid swap so clear pending and handle matches normally
-                            this.pendingUserSwap = null;
-                            this.handleMatches();
-                        } else {
-                            //invalid swap so reverse with animation and show invalid overlay
-                            const t1 = this.pendingUserSwap.tile1;
-                            const t2 = this.pendingUserSwap.tile2;
-                            this.pendingUserSwap = null;
-                            this.invalidSwap = true;
-                            this.invalidSwapTile = t1;
-                            this.invalidSwapTime = 0;
-                            this.reversingSwap = { tile1: t1, tile2: t2 };
-                            this.reverseSwap(t1, t2);
-                        }
-                    } else if (this.justReversed) {
-                        //finished reversing an invalid swap clear flags
-                        this.swapInProgress = false;
-                        this.justReversed = false;
-                        this.invalidSwap = false;
-                        this.invalidSwapTile = null;
-                        this.invalidSwapTime = 0;
-                        this.reversingSwap = null;
-                    }*/
+                                        //if this was a user-initiated swap, check its result after the visual swap
+                                        if (this.invaid) {
+                                            const matches = this.findMatches();
+                                            if (matches.length > 0) {
+                                                //valid swap so clear pending and handle matches normally
+                                                this.pendingUserSwap = null;
+                                                this.handleMatches();
+                                            } else {
+                                                //invalid swap so reverse with animation and show invalid overlay
+                                                const t1 = this.pendingUserSwap.tile1;
+                                                const t2 = this.pendingUserSwap.tile2;
+                                                this.pendingUserSwap = null;
+                                                this.invalidSwap = true;
+                                                this.invalidSwapTile = t1;
+                                                this.invalidSwapTime = 0;
+                                                this.reversingSwap = { tile1: t1, tile2: t2 };
+                                                this.reverseSwap(t1, t2);
+                                            }
+                                        } else if (this.justReversed) {
+                                            //finished reversing an invalid swap clear flags
+                                            this.swapInProgress = false;
+                                            this.justReversed = false;
+                                            this.invalidSwap = false;
+                                            this.invalidSwapTile = null;
+                                            this.invalidSwapTime = 0;
+                                            this.reversingSwap = null;
+                                        }*/
                 }
             }
 
@@ -708,15 +729,18 @@
                         y: 0
                     };
                     //{ tile1, tile2 } when user swaps
-                    this.pendingUserSwap = null; 
+                    this.pendingUserSwap = null;
                     //store reversing pair
-                    this.reversingSwap = null; 
+                    this.reversingSwap = null;
                     //set true when reverse animation running
-                    this.justReversed = false; 
-                    
+                    this.justReversed = false;
+
+                    //for multiple boards
+                    this.matchDelegate = null;
+
                     this.initBoard();
                 }
-                
+
                 /**
                  * Initialize or regenerate the board until no initial matches exist
                  * and at least one possible move is present.
@@ -732,6 +756,8 @@
                                 const tile = new Tile(col, row, colorIndex);
                                 tile.updatePosition(this.tileSize, this.boardX, this.boardY);
                                 this.tiles[row][col] = tile;
+                                //tag tile with board ref. This allows me to have multiple boards that work together
+                                tile.board = this;
                             }
                         }
                     };
@@ -741,7 +767,7 @@
                         makeBoard();
                     } while (this.findMatches().length > 0 || !this.hasPossibleMove());
                 }
-                
+
                 //initial board will be regenerated if any connected matches are present
                 /**
                  * Check whether a tile placement is valid. Placeholder that currently always returns true.
@@ -752,7 +778,7 @@
                 isTileValid(col, row) {
                     return true;
                 }
-                
+
                 /**
                  * Return the tile at world coordinates, or null if none.
                  * @param {number} x
@@ -762,13 +788,13 @@
                 getTileAtPos(x, y) {
                     const col = Math.floor((x - this.boardX) / this.tileSize);
                     const row = Math.floor((y - this.boardY) / this.tileSize);
-                    
+
                     if (col >= 0 && col < this.cols && row >= 0 && row < this.rows) {
                         return this.tiles[row][col];
                     }
                     return null;
                 }
-                
+
                 /**
                  * Handle selection of a tile. If a different tile is already selected,
                  * attempt to swap if adjacent.
@@ -777,7 +803,7 @@
                  */
                 selectTile(tile) {
                     if (this.swapInProgress) return;
-                    
+
                     if (this.selectedTile === tile) {
                         this.selectedTile = null;
                     } else if (!this.selectedTile) {
@@ -786,13 +812,16 @@
                         //swap tiles if adjacent
                         if (this.areAdjacent(this.selectedTile, tile)) {
                             //mark as a user-initiated swap so we can check after animation
-                            this.pendingUserSwap = { tile1: this.selectedTile, tile2: tile };
+                            this.pendingUserSwap = {
+                                tile1: this.selectedTile,
+                                tile2: tile
+                            };
                             this.swapTiles(this.selectedTile, tile);
                         }
                         this.selectedTile = tile;
                     }
                 }
-                
+
                 /**
                  * Test whether two tiles are adjacent on the grid.
                  * @param {Tile} tile1
@@ -804,7 +833,7 @@
                     const rowDiff = Math.abs(tile1.row - tile2.row);
                     return (colDiff === 1 && rowDiff === 0) || (colDiff === 0 && rowDiff === 1);
                 }
-                
+
                 /**
                  * Swap two tiles in the grid and set them moving toward updated targets.
                  * @param {Tile} tile1
@@ -813,19 +842,18 @@
                  */
                 swapTiles(tile1, tile2) {
                     //swap positions in grid
-                    [this.tiles[tile1.row][tile1.col], this.tiles[tile2.row][tile2.col]] =
-                    [this.tiles[tile2.row][tile2.col], this.tiles[tile1.row][tile1.col]];
-                    
+                    [this.tiles[tile1.row][tile1.col], this.tiles[tile2.row][tile2.col]] = [this.tiles[tile2.row][tile2.col], this.tiles[tile1.row][tile1.col]];
+
                     //store original data before swapping properties
                     const originalRow1 = tile1.row;
                     const originalCol1 = tile1.col;
-                    
+
                     //swap row/col properties
                     tile1.row = tile2.row;
                     tile1.col = tile2.col;
                     tile2.row = originalRow1;
                     tile2.col = originalCol1;
-                    
+
                     //ensure tiles animate towards their targets
                     tile1.isMoving = true;
                     tile2.isMoving = true;
@@ -836,7 +864,7 @@
 
                     this.swapInProgress = true;
                 }
-                
+
                 /**
                  * Reverse a previously performed swap (animation-aware).
                  * @param {Tile} tile1
@@ -845,8 +873,7 @@
                  */
                 reverseSwap(tile1, tile2) {
                     //reverse a swap with animation
-                    [this.tiles[tile1.row][tile1.col], this.tiles[tile2.row][tile2.col]] =
-                    [this.tiles[tile2.row][tile2.col], this.tiles[tile1.row][tile1.col]];
+                    [this.tiles[tile1.row][tile1.col], this.tiles[tile2.row][tile2.col]] = [this.tiles[tile2.row][tile2.col], this.tiles[tile1.row][tile1.col]];
 
                     const originalRow1 = tile1.row;
                     const originalCol1 = tile1.col;
@@ -867,7 +894,7 @@
                     this.justReversed = true;
                     this.swapInProgress = true;
                 }
-                
+
                 /**
                  * Find connected components of tiles that satisfy matching rules.
                  * Returns an array of matched tiles.
@@ -876,7 +903,9 @@
                 findMatches() {
                     //find connected components where tiles have same color and both have indicators on the touching side
                     const matched = [];
-                    const visited = Array.from({ length: this.rows }, () => Array(this.cols).fill(false));
+                    const visited = Array.from({
+                        length: this.rows
+                    }, () => Array(this.cols).fill(false));
 
                     const inBounds = (r, c) => r >= 0 && r < this.rows && c >= 0 && c < this.cols;
 
@@ -898,11 +927,30 @@
                                 component.push(t);
 
                                 //check four neighbors for bidirectional (fun word lol) indicator connection
-                                const neighbors = [
-                                    { rr: tr - 1, cc: tc, side: 'up', opp: 'down' },
-                                    { rr: tr + 1, cc: tc, side: 'down', opp: 'up' },
-                                    { rr: tr, cc: tc - 1, side: 'left', opp: 'right' },
-                                    { rr: tr, cc: tc + 1, side: 'right', opp: 'left' }
+                                const neighbors = [{
+                                        rr: tr - 1,
+                                        cc: tc,
+                                        side: 'up',
+                                        opp: 'down'
+                                    },
+                                    {
+                                        rr: tr + 1,
+                                        cc: tc,
+                                        side: 'down',
+                                        opp: 'up'
+                                    },
+                                    {
+                                        rr: tr,
+                                        cc: tc - 1,
+                                        side: 'left',
+                                        opp: 'right'
+                                    },
+                                    {
+                                        rr: tr,
+                                        cc: tc + 1,
+                                        side: 'right',
+                                        opp: 'left'
+                                    }
                                 ];
 
                                 for (const n of neighbors) {
@@ -929,20 +977,20 @@
 
                     return matched;
                 }
-                
+
                 /**
                  * Mark matched tiles for pooling and initiate their movement into the pool.
                  * @returns {void}
                  */
-                handleMatches() {
-                    let matched = this.findMatches();
-
+                handleMatches(matched) {
+                    if (!matched) {
+                        matched = this.matchDelegate ? this.matchDelegate() : this.findMatches();
+                    }
                     if (matched.length === 0) {
                         this.swapInProgress = false;
                         return;
                     }
 
-                    //mark matched tiles and prepare to animate them into the canvas pool
                     matched.forEach(tile => {
                         tile.matched = true;
                         tile.toBePooled = true;
@@ -950,20 +998,23 @@
                         tile.isMoving = false;
                     });
 
-                    //pool layout
-                    matched.forEach((tile, idx) => {
-                        const slot = this.pool.tiles.length + idx;
-                        const t = this.pool.getTarget(slot);
+                    //track next slot per owner separately so tiles don't stack
+                    const ownerSlots = new Map();
+                    matched.forEach(tile => {
+                        const owner = tile.board || this;
+                        const slot = ownerSlots.has(owner) ? ownerSlots.get(owner) : owner.pool.tiles.length;
+                        ownerSlots.set(owner, slot + 1);
+                        const t = owner.pool.getTarget(slot);
                         tile.targetX = t.x;
                         tile.targetY = t.y;
                         tile.isMoving = true;
                         tile.rotation = 0;
+                        owner.swapInProgress = true;
                     });
 
-                    //keep swapInProgress true until pooling finishes
                     this.swapInProgress = true;
                 }
-                
+
                 /**
                  * Apply gravity to the board so tiles fall down into empty spaces.
                  * @returns {void}
@@ -971,7 +1022,7 @@
                 applyGravity() {
                     for (let col = 0; col < this.cols; col++) {
                         let writePos = this.rows - 1;
-                        
+
                         for (let row = this.rows - 1; row >= 0; row--) {
                             if (this.tiles[row][col] !== null) {
                                 if (row !== writePos) {
@@ -985,7 +1036,7 @@
                             }
                         }
                     }
-                    
+
                     //update positions
                     for (let row = 0; row < this.rows; row++) {
                         for (let col = 0; col < this.cols; col++) {
@@ -997,7 +1048,7 @@
                         }
                     }
                 }
-                
+
                 /**
                  * Fill empty slots on the board by creating new tiles and then check for cascades.
                  * @returns {void}
@@ -1013,6 +1064,8 @@
                                 tile.targetX = this.boardX + col * this.tileSize + this.tileSize / 2;
                                 tile.x = tile.targetX;
                                 this.tiles[row][col] = tile;
+                                //same as initBoard:
+                                tile.board = this;
                             }
                         }
                     }
@@ -1040,15 +1093,24 @@
                                     //swap inplace
                                     this.tiles[r][c] = t2;
                                     this.tiles[r][rc] = t;
-                                    const origR1 = t.row, origC1 = t.col, origR2 = t2.row, origC2 = t2.col;
-                                    t.row = r; t.col = rc; t2.row = r; t2.col = c;
+                                    const origR1 = t.row,
+                                        origC1 = t.col,
+                                        origR2 = t2.row,
+                                        origC2 = t2.col;
+                                    t.row = r;
+                                    t.col = rc;
+                                    t2.row = r;
+                                    t2.col = c;
 
                                     const matches = this.findMatches();
 
                                     //swap back
                                     this.tiles[r][c] = t;
                                     this.tiles[r][rc] = t2;
-                                    t.row = origR1; t.col = origC1; t2.row = origR2; t2.col = origC2;
+                                    t.row = origR1;
+                                    t.col = origC1;
+                                    t2.row = origR2;
+                                    t2.col = origC2;
 
                                     if (matches.length > 0) return true;
                                 }
@@ -1061,14 +1123,23 @@
                                 if (t2) {
                                     this.tiles[r][c] = t2;
                                     this.tiles[rr][c] = t;
-                                    const origR1 = t.row, origC1 = t.col, origR2 = t2.row, origC2 = t2.col;
-                                    t.row = rr; t.col = c; t2.row = r; t2.col = c;
+                                    const origR1 = t.row,
+                                        origC1 = t.col,
+                                        origR2 = t2.row,
+                                        origC2 = t2.col;
+                                    t.row = rr;
+                                    t.col = c;
+                                    t2.row = r;
+                                    t2.col = c;
 
                                     const matches = this.findMatches();
 
                                     this.tiles[r][c] = t;
                                     this.tiles[rr][c] = t2;
-                                    t.row = origR1; t.col = origC1; t2.row = origR2; t2.col = origC2;
+                                    t.row = origR1;
+                                    t.col = origC1;
+                                    t2.row = origR2;
+                                    t2.col = origC2;
 
                                     if (matches.length > 0) return true;
                                 }
@@ -1110,9 +1181,11 @@
                                 const t = list[idx++];
                                 this.tiles[r][c] = t || null;
                                 if (t) {
-                                    t.row = r; t.col = c;
+                                    t.row = r;
+                                    t.col = c;
                                     t.updatePosition(this.tileSize, this.boardX, this.boardY);
-                                    t.x = t.targetX; t.y = t.targetY;
+                                    t.x = t.targetX;
+                                    t.y = t.targetY;
                                     t.isMoving = false;
                                 }
                             }
@@ -1121,7 +1194,7 @@
                         if (attempts > 200) break;
                     } while (this.findMatches().length > 0 || !this.hasPossibleMove());
                 }
-                
+
                 /**
                  * Update board state: animate tiles, detect pooling completions, handle swaps and matches.
                  * @param {number} dt - Delta time in seconds.
@@ -1160,15 +1233,15 @@
                         this.applyGravity();
                         this.fillGaps();
                         //don't interupt 
-                        this.swapInProgress = true;  
+                        this.swapInProgress = true;
                     }
-                    
+
                     //handle invalid swap completion
                     if (this.invalidSwap && this.invalidSwapTile) {
                         this.invalidSwapTime += dt;
                         const tile = this.invalidSwapTile;
                         const dist = Math.hypot(tile.targetX - tile.x, tile.targetY - tile.y);
-                        
+
                         //when tile reaches original position, clear invalid swap
                         if (dist < 2) {
                             this.invalidSwap = false;
@@ -1176,7 +1249,7 @@
                             this.invalidSwapTime = 0;
                         }
                     }
-                    
+
                     //only check for matches after all tiles have finished falling
                     let anyMoving = false;
                     for (let row = 0; row < this.rows; row++) {
@@ -1186,18 +1259,17 @@
                             }
                         }
                     }
-                    
-                    //only process swaps and matches when gravity has completely settled
+
                     if (!anyMoving && this.swapInProgress) {
                         //if this was a user-initiated swap, check its result after the visual swap and grav settles
                         if (this.pendingUserSwap) {
-                            const matches = this.findMatches();
+                            const matches = this.matchDelegate ? this.matchDelegate() : this.findMatches();
                             if (matches.length > 0) {
                                 //valid swap so clear pending and handle matches normally
                                 this.pendingUserSwap = null;
-                                this.handleMatches();
-                            } 
-                            else {
+                                //pass in
+                                this.handleMatches(matches);
+                            } else {
                                 //invalid swap so reverse with animation and show invalid overlay
                                 const t1 = this.pendingUserSwap.tile1;
                                 const t2 = this.pendingUserSwap.tile2;
@@ -1205,11 +1277,13 @@
                                 this.invalidSwap = true;
                                 this.invalidSwapTile = t1;
                                 this.invalidSwapTime = 0;
-                                this.reversingSwap = { tile1: t1, tile2: t2 };
+                                this.reversingSwap = {
+                                    tile1: t1,
+                                    tile2: t2
+                                };
                                 this.reverseSwap(t1, t2);
                             }
-                        } 
-                        else if (this.justReversed) {
+                        } else if (this.justReversed) {
                             //finished reversing an invalid swap clear flags
                             this.swapInProgress = false;
                             this.justReversed = false;
@@ -1217,22 +1291,20 @@
                             this.invalidSwapTile = null;
                             this.invalidSwapTime = 0;
                             this.reversingSwap = null;
-                        } 
-                        else {
-                            //not a user swap: check for cascade matches after gravity settles
-                            const matches = this.findMatches();
+                        } else {
+                            //check for cascade matches after gravity settles
+                            const matches = this.matchDelegate ? this.matchDelegate() : this.findMatches();
                             if (matches.length > 0) {
-                                this.handleMatches();
+                                //pass in baby
+                                this.handleMatches(matches);
                             } else {
-                                if (!this.hasPossibleMove()) {
-                                    this.reshuffleBoard();
-                                }
+                                if (!this.hasPossibleMove()) this.reshuffleBoard();
                                 this.swapInProgress = false;
                             }
                         }
                     }
                 }
-                
+
                 /**
                  * Render the board, grid, pooled tiles, and visual feedback to the global `ctx`.
                  * @returns {void}
@@ -1241,12 +1313,12 @@
                     //draw board background
                     ctx.fillStyle = "rgba(30, 30, 60, 0.8)";
                     ctx.fillRect(
-                        this.boardX - 5, 
-                        this.boardY - 5, 
-                        this.cols * this.tileSize + 10, 
+                        this.boardX - 5,
+                        this.boardY - 5,
+                        this.cols * this.tileSize + 10,
                         this.rows * this.tileSize + 10
                     );
-                    
+
                     //draw grid lines
                     ctx.strokeStyle = "rgba(100, 100, 150, 0.3)";
                     ctx.lineWidth = 1;
@@ -1262,7 +1334,7 @@
                         ctx.lineTo(this.boardX + this.cols * this.tileSize, this.boardY + i * this.tileSize);
                         ctx.stroke();
                     }
-                    
+
                     //draw tiles
                     for (let row = 0; row < this.rows; row++) {
                         for (let col = 0; col < this.cols; col++) {
@@ -1289,12 +1361,12 @@
                         //ensure pooled tiles use pool visuals and are drawn above
                         tile.draw(this.tileSize, false);
                     }
-                    
+
                     //draw invalid swap feedback
                     if (this.invalidSwap && this.invalidSwapTile) {
                         const flashIntensity = Math.max(0, 1 - (this.invalidSwapTime / 0.3));
                         const alphaFlash = flashIntensity * 0.4;
-                        
+
                         ctx.fillStyle = `rgba(255, 80, 80, ${alphaFlash})`;
                         ctx.fillRect(
                             this.boardX - 5,
@@ -1304,68 +1376,87 @@
                         );
                     }
                 }
-                
+
                 /**
                  * Handle mouse/touch input for selecting, dragging and dropping tiles on the board.
                  * Reads global `mouse` state.
                  * @returns {void}
                  */
                 handleInput() {
-                    const { screenX, screenY, down, wasDown } = mouse;
+                    const {
+                        screenX,
+                        screenY,
+                        down,
+                        wasDown
+                    } = mouse;
                     //detect drag 
                     const clickHappened = down && !wasDown;
                     const released = !down && wasDown;
-                    
+
                     if (clickHappened) {
                         //start dragging a tile use global screenToWorld function
                         const worldPos = screenToWorld(screenX, screenY);
                         const scaledX = worldPos.x;
                         const scaledY = worldPos.y;
-                        
+
                         const tile = this.getTileAtPos(scaledX, scaledY);
                         if (tile && !this.swapInProgress && !this.invalidSwap) {
                             this.draggedTile = tile;
                             this.draggedTile.beingDragged = true;
-                            this.draggedTileOriginal = { x: tile.x, y: tile.y, row: tile.row, col: tile.col };
+                            this.draggedTileOriginal = {
+                                x: tile.x,
+                                y: tile.y,
+                                row: tile.row,
+                                col: tile.col
+                            };
                             this.dragOffsetX = scaledX - tile.x;
                             this.dragOffsetY = scaledY - tile.y;
                         }
-                    } 
-                    else if (this.draggedTile && down) { 
+                    } else if (this.draggedTile && down) {
                         //update drag position
                         const worldPos = screenToWorld(screenX, screenY);
                         const scaledX = worldPos.x;
                         const scaledY = worldPos.y;
-                        
+
                         const targetX = scaledX - this.dragOffsetX;
                         const targetY = scaledY - this.dragOffsetY;
-                        
+
                         //directly set position
                         this.draggedTile.x = targetX;
                         this.draggedTile.y = targetY;
-                        
+
                         //calc distance from original and apply size curve
                         const distFromStart = Math.hypot(
                             this.draggedTile.x - this.draggedTileOriginal.x,
                             this.draggedTile.y - this.draggedTileOriginal.y
                         );
-                        
+
                         //size grows as drag distance increases (easing function)
                         const maxDragDist = this.tileSize * 1.2;
                         const sizeProgress = Math.min(distFromStart / maxDragDist, 1);
                         this.draggedTile.scale = 1 + (sizeProgress * 0.3);
-                    } 
-                    else if (released && this.draggedTile) {
+                    } else if (released && this.draggedTile) {
                         const tile = this.draggedTile;
                         const originalTile = this.draggedTileOriginal;
                         let swapped = false;
 
                         //try board-to-board swap with nearest adjacent tile
-                        const directions = [
-                            { dc: -1, dr: 0 },
-                            { dc:  1, dr: 0 },
-                            { dc:  0, dr: -1 },
-                            { dc:  0, dr: 1 }
+                        const directions = [{
+                                dc: -1,
+                                dr: 0
+                            },
+                            {
+                                dc: 1,
+                                dr: 0
+                            },
+                            {
+                                dc: 0,
+                                dr: -1
+                            },
+                            {
+                                dc: 0,
+                                dr: 1
+                            }
                         ];
 
                         for (const dir of directions) {
@@ -1382,7 +1473,10 @@
                                     );
                                     if (dist < this.tileSize * 0.6) {
                                         this.swapTiles(tile, targetTile);
-                                        this.pendingUserSwap = { tile1: tile, tile2: targetTile };
+                                        this.pendingUserSwap = {
+                                            tile1: tile,
+                                            tile2: targetTile
+                                        };
                                         swapped = true;
                                         break;
                                     }
@@ -1409,48 +1503,61 @@
             this.tileBoard = new TileBoard(6, 6, 20, 120, 65);
 
             /**
-             * Right-side placement grid that accepts tiles dragged from the pool.
+             * GridController: right-side placement grid that accepts tiles from the pool
+             * but enforces placement rules (starting tile, side-indicator alignment).
              */
-            class RightGrid {
-                /**
-                 * @param {number} x - top-left world X
-                 * @param {number} y - top-left world Y
-                 * @param {number} cellSize
-                 */
-                constructor(x, y, cellSize) {
+            class GridController {
+                constructor(x, y, cellSize, cols = 4, rows = 2) {
                     this.x = x;
                     this.y = y;
                     this.cellSize = cellSize;
-                    // Array of objects of format {row: Number, col: Number, tile: Tile}
+                    this.cols = cols;
+                    this.rows = rows;
+                    this.grid = Array.from({
+                        length: rows
+                    }, () => Array(cols).fill(null));
                     this.tiles = [];
+
+                    const startCol = 0;
+                    const startRow = 0;
+
+
+                    const startTile = new Tile(startCol, startRow, 0);
+
+                    //got to make sure start tile is compatible lol
+                    startTile.sides = {
+                        left: true,
+                        right: true,
+                        up: true,
+                        down: true
+                    };
+
+                    //place it without checks
+                    this._placeInternal(startTile, startCol, startRow);
                 }
 
-                /**
-                 * Get cell indices for a world position.
-                 * @param {number} wx
-                 * @param {number} wy
-                 * @returns {{col:number,row:number}|null}
-                 */
                 getCellAtPos(wx, wy) {
                     const col = Math.floor((wx - this.x) / this.cellSize);
                     const row = Math.floor((wy - this.y) / this.cellSize);
-                    if (col >= 0 && row >= 0) {
-                        return { col, row };
+                    if (col >= 0 && col < this.cols && row >= 0 && row < this.rows) {
+                        return {
+                            col,
+                            row
+                        };
                     }
                     return null;
                 }
 
-                /**
-                 * Place a tile into a specific cell. The tile will be snapped to the cell center.
-                 * @param {Tile} tile
-                 * @param {number} col
-                 * @param {number} row
-                 */
-                placeTile(tile, col, row) {
-                    this.tiles.push({row, col, tile});
+                _placeInternal(tile, col, row) {
+                    this.grid[row][col] = tile;
+                    this.tiles.push({
+                        tile,
+                        col,
+                        row
+                    });
                     tile.inPool = false;
                     tile.inGrid = true;
-                    tile.matched = false; 
+                    tile.matched = false;
                     tile.opacity = 1;
                     tile.row = row;
                     tile.col = col;
@@ -1465,62 +1572,239 @@
                     tile.scale = 1;
                 }
 
-                /**
-                 * Update animations for tiles inside the grid.
-                 * @param {number} dt
-                 */
-                update(dt) {
-                    for (const { tile } of this.tiles)
-                        if (tile) tile.animate(dt);
+                placeTile(tile, col, row) {
+                    if (!this.canPlace(tile, col, row)) return false;
+                    this._placeInternal(tile, col, row);
+                    return true;
                 }
 
-                /**
-                 * Draw grid and its tiles.
-                 * @returns {void}
-                 */
-                draw() {
-                    //draw background and grid cells
-                    ctx.save();
-                    ctx.strokeStyle = "rgba(180,180,180,0.6)";
-                    ctx.lineWidth = 1;
-                    for (let r = 0; r < 100; r++) {
-                        for (let c = 0; c < 100; c++) {
-                            const x = this.x + c * this.cellSize;
-                            const y = this.y + r * this.cellSize;
-                            ctx.strokeRect(x, y, this.cellSize, this.cellSize);
+                canPlace(tile, col, row) {
+                    if (col < 0 || col >= this.cols || row < 0 || row >= this.rows) return false;
+                    if (this.grid[row][col]) return false;
+
+                    const neighbors = [{
+                            dc: -1,
+                            dr: 0,
+                            mySide: 'left',
+                            theirSide: 'right'
+                        },
+                        {
+                            dc: 1,
+                            dr: 0,
+                            mySide: 'right',
+                            theirSide: 'left'
+                        },
+                        {
+                            dc: 0,
+                            dr: -1,
+                            mySide: 'up',
+                            theirSide: 'down'
+                        },
+                        {
+                            dc: 0,
+                            dr: 1,
+                            mySide: 'down',
+                            theirSide: 'up'
+                        }
+                    ];
+
+                    for (const n of neighbors) {
+                        const nc = col + n.dc;
+                        const nr = row + n.dr;
+                        if (nc < 0 || nc >= this.cols || nr < 0 || nr >= this.rows) continue;
+                        const neighbor = this.grid[nr][nc];
+                        if (!neighbor) continue;
+                        if (tile.sides && neighbor.sides && tile.sides[n.mySide] && neighbor.sides[n.theirSide]) {
+                            return true;
                         }
                     }
-                    //draw tiles
-                    for (const { tile } of this.tiles)
-                        if (tile) tile.draw(this.cellSize, false);
+
+                    return false;
+                }
+
+                update(dt) {
+                    for (const entry of this.tiles)
+                        if (entry.tile) entry.tile.animate(dt);
+                }
+
+                draw() {
+                    ctx.save();
+                    ctx.fillStyle = 'rgba(20,20,40,0.6)';
+                    ctx.fillRect(this.x - 4, this.y - 4, this.cols * this.cellSize + 8, this.rows * this.cellSize + 8);
+                    ctx.strokeStyle = 'rgba(180,180,180,0.6)';
+                    ctx.lineWidth = 1;
+                    for (let r = 0; r < this.rows; r++) {
+                        for (let c = 0; c < this.cols; c++) {
+                            const gx = this.x + c * this.cellSize;
+                            const gy = this.y + r * this.cellSize;
+                            ctx.strokeRect(gx, gy, this.cellSize, this.cellSize);
+                        }
+                    }
+                    for (const entry of this.tiles) {
+                        if (entry && entry.tile) entry.tile.draw(this.cellSize, false);
+                    }
                     ctx.restore();
                 }
             }
+            //layout junk
+            const GAP = 6;
+            const TS = Math.floor(Math.min(width, height) / 12);
+            const BOARD_Y = Math.floor(height * 0.08);
 
-            //create a right-side grid positioned below the tile board
-            const gridWidth = 4 * this.tileBoard.tileSize;
-            const rgx = (width - gridWidth) / 2;
-            const rgy = this.tileBoard.boardY + this.tileBoard.rows * this.tileBoard.tileSize + 20;
-            this.rightGrid = new RightGrid(rgx, rgy, this.tileBoard.tileSize);
+            //left board
+            const leftBoardCols = 4;
+            const leftBoardX = 0;
+            const leftBoardRows = Math.floor((height - BOARD_Y) / TS);
 
-            
+            // right board
+            const rightBoardX = leftBoardCols * TS + GAP;
+            const rightBoardRows = 5;
+            const rightBoardCols = Math.floor((width - rightBoardX) / TS);
+            const rightBoardY = BOARD_Y;
+
+            //placement grid  centered in the space below the right board
+            const gridCols = 6;
+            const gridRows = Math.floor((height - (rightBoardY + rightBoardRows * TS + GAP)) / TS);
+            const gridX = rightBoardX + Math.floor(((rightBoardCols * TS) - (gridCols * TS)) / 2);
+            const gridY = rightBoardY + rightBoardRows * TS + GAP;
+
+            this.rightGrid = new GridController(gridX, gridY, TS, gridCols, Math.max(1, gridRows));
+            this.tileBoardLeft = new TileBoard(leftBoardCols, leftBoardRows, leftBoardX, BOARD_Y, TS);
+            this.tileBoardRight = new TileBoard(rightBoardCols, rightBoardRows, rightBoardX, rightBoardY, TS);
+
+            const unifiedChecker = () => this.findMatchesUnified();
+            this.tileBoardLeft.matchDelegate = unifiedChecker;
+            this.tileBoardRight.matchDelegate = unifiedChecker;
+
+            //trigger a one-time cascade check on both boards so seam matches get cleared at startup(?)
+            this.tileBoardLeft.swapInProgress = true;
+            this.tileBoardRight.swapInProgress = true;
+
+            //ref
+            window.App = window.App || this;
         };
-        
+
+        //finally! This took forever to figure out
+        App.prototype.findMatchesUnified = function() {
+            const boardL = this.tileBoardLeft;
+            const boardR = this.tileBoardRight;
+
+            const LC = boardL.cols;
+            const RC = boardR.cols;
+            const ROWS = Math.max(boardL.rows, boardR.rows);
+            const totalCols = LC + RC;
+
+            const getTile = (r, c) => {
+                if (c < 0 || c >= totalCols || r < 0) return null;
+                if (c < LC) return (r < boardL.rows && boardL.tiles[r]) ? boardL.tiles[r][c] : null;
+                return (r < boardR.rows && boardR.tiles[r]) ? boardR.tiles[r][c - LC] : null;
+            };
+
+            const visited = Array.from({
+                length: ROWS
+            }, () => Array(totalCols).fill(false));
+            const matched = [];
+
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < totalCols; c++) {
+                    const start = getTile(r, c);
+                    //if (!start || visited[r][c]) continue;
+                    if (!start || visited[r][c] || start.matched || start.toBePooled) continue;
+
+                    const color = start.colorIndex;
+                    const stack = [{
+                        r,
+                        c
+                    }];
+                    const component = [];
+
+                    while (stack.length) {
+                        const {
+                            r: tr,
+                            c: tc
+                        } = stack.pop();
+                        if (visited[tr][tc]) continue;
+                        const t = getTile(tr, tc);
+                        if (!t) continue;
+                        visited[tr][tc] = true;
+                        component.push(t);
+
+                        const neighbors = [{
+                                rr: tr - 1,
+                                cc: tc,
+                                side: 'up',
+                                opp: 'down'
+                            },
+                            {
+                                rr: tr + 1,
+                                cc: tc,
+                                side: 'down',
+                                opp: 'up'
+                            },
+                            {
+                                rr: tr,
+                                cc: tc - 1,
+                                side: 'left',
+                                opp: 'right'
+                            },
+                            {
+                                rr: tr,
+                                cc: tc + 1,
+                                side: 'right',
+                                opp: 'left'
+                            }
+                        ];
+                        for (const n of neighbors) {
+                            const nb = getTile(n.rr, n.cc);
+                            //if (!nb || visited[n.rr][n.cc]) continue;
+                            if (!nb || visited[n.rr][n.cc] || nb.matched || nb.toBePooled) continue;
+                            if (nb.colorIndex !== color) continue;
+                            if (t.sides[n.side] && nb.sides[n.opp]) {
+                                stack.push({
+                                    r: n.rr,
+                                    c: n.cc
+                                });
+                            }
+                        }
+                    }
+
+                    if (component.length >= 3) {
+                        component.slice(0, 3).forEach(tile => matched.push(tile));
+                    }
+                }
+            }
+            return matched;
+        };
+
         /* Run the game */
         App.prototype.runGame = function(dt) {
-            //update tile board
-            if (this.tileBoard) {
-                this.tileBoard.update(dt);
-                this.tileBoard.pool.update(dt);
-                if (this.rightGrid) this.rightGrid.update(dt);
-                this.tileBoard.handleInput();
-                this.tileBoard.pool.handleInput();
-                this.tileBoard.draw();
-                if (this.rightGrid) this.rightGrid.draw();
+            ctx.fillStyle = "rgb(250, 250, 225)";
+            ctx.fillRect(0, 0, width, height);
+
+            const bL = this.tileBoardLeft;
+            const bR = this.tileBoardRight;
+
+            if (bL) {
+                bL.update(dt);
+                bL.pool.update(dt);
+                bL.handleInput();
+                bL.pool.handleInput();
             }
-             
+            if (bR) {
+                bR.update(dt);
+                bR.pool.update(dt);
+                bR.handleInput();
+                bR.pool.handleInput();
+            }
+
+            if (this.rightGrid) {
+                this.rightGrid.update(dt);
+                this.rightGrid.draw();
+            }
+            if (bL) bL.draw();
+            if (bR) bR.draw();
         };
-        
+
         /* Run the scenes */
         App.prototype.scenes = function(DT) {
             switch (window.scene) {
@@ -1528,7 +1812,7 @@
                     //only run intro in main window, not fullscreen popup
                     if (!window.opener) {
                         intro.run();
-                        
+
                         //when intro finishes, transition to menu
                         if (intro.prog > 360) {
                             window.scene = "menu";
@@ -1564,16 +1848,16 @@
                 case "win": {
                     ctx.fillStyle = "rgb(5, 5, 25)";
                     ctx.fillRect(0, 0, width, height);
-                    
+
                     ctx.save();
                     ctx.fillStyle = "rgb(255, 215, 0)";
                     ctx.font = "bold 72px Comfortaa";
                     ctx.textAlign = "center";
                     ctx.fillText("VICTORY!", width / 2, height / 2 - 80);
-                    
+
                     ctx.fillStyle = "rgb(245, 245, 245)";
                     ctx.font = "bold 36px Lato";
-                    
+
                     //
                     if (!this.winScoreEncoded) {
                         this.finalScore = Math.ceil(this.score);
@@ -1581,55 +1865,55 @@
                         textToCopy = this.encodedScore;
                         this.winScoreEncoded = true;
                     }
-                    
+
                     ctx.fillText("Final Score: " + this.finalScore, width / 2, height / 2);
-                    
+
                     ctx.font = "24px Lato";
                     ctx.fillText("Encoded: " + this.encodedScore, width / 2, height / 2 + 50);
-                    
+
                     ctx.font = "20px Lato";
                     ctx.globalAlpha = 0.7;
                     ctx.fillText("Click 'Copy Score' to copy your encoded score!", width / 2, height / 2 + 90);
-                    
+
                     // ctx.globalAlpha = 1;
                     // ctx.font = "24px Lato";
                     // ctx.fillText("Press SPACE to play again", width / 2, height / 2 + 130);
                     // ctx.restore();
-                    
+
                     //show copy button
                     document.getElementById('copyButton').style.display = "block";
-                    
+
                     if (keys[32]) {
                         document.getElementById('copyButton').style.display = "none";
-                        this.winScoreEncoded = false; 
+                        this.winScoreEncoded = false;
                         this.resetGame();
                         window.scene = "game";
                     }
                     break;
                 }
-                case "death": { 
+                case "death": {
                     ctx.fillStyle = "rgb(25, 5, 5)";
                     ctx.fillRect(0, 0, width, height);
-                    
+
                     ctx.save();
                     ctx.fillStyle = "rgb(255, 80, 80)";
                     ctx.font = "bold 72px Comfortaa";
                     ctx.textAlign = "center";
                     ctx.fillText("DEFEAT", width / 2, height / 2 - 80);
-                    
+
                     ctx.fillStyle = "rgb(245, 245, 245)";
                     ctx.font = "bold 36px Lato";
                     ctx.fillText("Score: " + Math.ceil(this.score), width / 2, height / 2);
-                    
+
                     ctx.font = "24px Lato";
                     ctx.globalAlpha = 0.7;
                     ctx.fillText("You ran out of health!", width / 2, height / 2 + 50);
-                    
+
                     ctx.globalAlpha = 1;
                     ctx.font = "24px Lato";
                     ctx.fillText("Press SPACE to try again", width / 2, height / 2 + 100);
                     ctx.restore();
-                    
+
                     if (keys[32]) {
                         //clear both flags
                         try {
@@ -1640,9 +1924,8 @@
                                 save.playerHp = 10;
                                 storage.setItem("dronemaker_save_v1", JSON.stringify(save));
                             }
-                        } catch (e) {
-                        }
-                        
+                        } catch (e) {}
+
                         this.player.die = false;
                         this.resetGame();
                         window.scene = "game";
@@ -1651,15 +1934,15 @@
                 }
             }
         };
-        
+
         /* Run the application */
         App.prototype.run = function(DT) {
             this.scenes(DT);
         };
-            
+
         return App;
     })();
-    
+
     //intiate a new game
     window.App = new Application({});
 
@@ -1715,27 +1998,27 @@
 
             //run the game based on deltatime
             App.run(dt);
-            
+
             //@Judges DT makes this run smoothly on any device with any framerate
 
             //reset events
             mouse.released = false;
             mouse.clicked = false;
-            
+
             const button2 = document.getElementById("reload");
-    
+
             // //clear local storage
             // const clearLocal = () => {
             //     storage.clear();
             //     //alert(JSON.stringify(storage))
             // };
-        
+
             button2.addEventListener("click", () => {
                 if (App && typeof App.resetGame === 'function') {
                     App.resetGame();
                 }
             });
-                        
+
             //frameCount
             frameCount++;
 
@@ -1762,10 +2045,10 @@
         }
     });
     /**
-    * main animation loop that requests frames and triggers rendering while the game is running
-    * @param {number} now - the current timestamp provided by requestanimationframe
-    * @returns {void}
-    */
+     * main animation loop that requests frames and triggers rendering while the game is running
+     * @param {number} now - the current timestamp provided by requestanimationframe
+     * @returns {void}
+     */
     /**
      * High level loop that guards running state and schedules the next RAF.
      * @param {number} now - The current timestamp from requestAnimationFrame.
@@ -1789,9 +2072,9 @@
 
     // if (loopTimer) window.clearInterval(loopTimer);
     // var loopTimer = window.setInterval(render, 1000/60);
-    
+
     window.addEventListener("keydown", (e) => {
-        if (e.which === 192) { 
+        if (e.which === 192) {
             showThumb();
         }
         e.preventDefault();
@@ -1840,7 +2123,7 @@
     });
     window.addEventListener("contextmenu", (e) => {
         //disableContextMenu to allow for right clicks in game
-        e.preventDefault();
+        //e.preventDefault();
     });
 
     //prevents focus spam
@@ -1852,13 +2135,13 @@
     window.addEventListener("mousemove", (e) => {
         mouse.screenX = e.clientX;
         mouse.screenY = e.clientY;
-    
+
         //convert screen to world CORRECTLY
         const worldPos = screenToWorld(e.clientX, e.clientY);
-        mouse.x = worldPos.x; 
-        mouse.y = worldPos.y; 
+        mouse.x = worldPos.x;
+        mouse.y = worldPos.y;
     });
-    
+
     /**
      * converts world coordinates to screen coordinates by applying camera translation and scale
      * @param {number} worldx - the horizontal position in the game world
@@ -1867,17 +2150,17 @@
      */
     function worldToScreen(worldX, worldY) {
         const totalScale = App.cam.z * displayScale;
-        
+
         //apply camera translation
         const camX = worldX - App.cam.x + App.cam.align.x - (App.shake.x || 0);
         const camY = worldY - App.cam.y + App.cam.align.y - (App.shake.y || 0);
-        
+
         //then apply scaling
         const screenX = camX * totalScale;
         const screenY = camY * totalScale;
-        
-        return { 
-            x: screenX, 
+
+        return {
+            x: screenX,
             y: screenY
         };
     }
@@ -1889,7 +2172,7 @@
     window.addEventListener("resize", function() {
         if (typeof minimap !== "undefined" && minimap.init) minimap.init();
     });
-    
+
     //intiate...
     /**
      * Open the current document in a new window (simple fullscreen mode). Copies
@@ -1898,7 +2181,7 @@
      */
     const openInFullscreen = () => {
         sessionStorage.setItem('skipMenu', 'true');
-        
+
         const w = window.open();
         w.document.open();
         w.document.write(
@@ -1906,12 +2189,11 @@
         );
         w.document.close();
     };
-    
-    
+
     //add the event listener
-    button.addEventListener("click", openInFullscreen); 
-    
-    
+    button.addEventListener("click", openInFullscreen);
+
+
     firstFrame = false;
 
     return {
@@ -1922,8 +2204,6 @@
 
 //document.getElementById("thumb").style.display = "none";
 document.getElementById("game").style.border = "none";
-
-
     </script>
 </html> 
 
