@@ -754,8 +754,8 @@
                  * @returns {void}
                  */
                 iterate(callback) {
-                    for (let r = 0; r < this.rows1; r++) {
-                        const cols = r < this.rows2 ? this.cols1 + this.cols2 : this.cols1;
+                    for (let r = 0; r < this.rows; r++) {
+                        const cols = r < this.rows2 ? this.cols : this.cols1;
                         for (let c = 0; c < cols; c++) {
                             callback(r, c);
                         }
@@ -782,8 +782,8 @@
                 inBounds(row, col) {
                     return (
                         row >= 0 && col >= 0 && (
-                            (row < this.rows2 && col < this.cols1 + this.cols2) ||
-                            (row < this.rows1 && col < this.cols1)
+                            (row < this.rows2 && col < this.cols) ||
+                            (row < this.rows && col < this.cols1)
                         )
                     );
                 }
@@ -912,9 +912,9 @@
                     const matched = [];
                     const visited = Array.from({
                         length: this.rows2
-                    }, () => Array(this.cols1 + this.cols2).fill(false)).concat(
+                    }, () => Array(this.cols).fill(false)).concat(
                         Array.from({
-                            length: this.rows1
+                            length: this.rows
                         }, () => Array(this.cols1).fill(false))
                     );
                     
@@ -1209,42 +1209,34 @@
                  * @returns {void}
                  */
                 update(dt) {
-                    //update all tiles
-                    for (let row = 0; row < this.rows; row++) {
-                        for (let col = 0; col < this.cols; col++) {
-                            if (this.tiles[row][col]) {
-                                this.tiles[row][col].animate(dt);
-                            }
-                        }
-                    }
+                    // update all tiles
+                    this.iterate((row, col) => this.tiles[row][col].animate(dt));
 
-                    //check for tiles that finished animating into the pool and move them from grid to pool
+                    // check for tiles that finished animating into the pool and move them from grid to pool
                     let pooledThisFrame = [];
-                    for (let row = 0; row < this.rows; row++) {
-                        for (let col = 0; col < this.cols; col++) {
-                            const t = this.tiles[row][col];
-                            if (t && t.toBePooled && !t.isMoving && !t.inPool) {
-                                //remove from grid and add to pool
-                                this.tiles[row][col] = null;
-                                t.inPool = true;
-                                t.toBePooled = false;
-                                //ensure position remains at pool target
-                                t.x = t.targetX;
-                                t.y = t.targetY;
-                                this.pool.add(t);
-                                pooledThisFrame.push(t);
-                            }
+                    this.iterate((row, col) => {
+                        const t = this.tiles[row][col];
+                        if (t && t.toBePooled && !t.isMoving && !t.inPool) {
+                            //remove from grid and add to pool
+                            this.tiles[row][col] = null;
+                            t.inPool = true;
+                            t.toBePooled = false;
+                            //ensure position remains at pool target
+                            t.x = t.targetX;
+                            t.y = t.targetY;
+                            this.pool.add(t);
+                            pooledThisFrame.push(t);
                         }
-                    }
+                    });
 
                     if (pooledThisFrame.length > 0) {
                         this.applyGravity();
                         this.fillGaps();
-                        //don't interupt 
+                        // don't interupt 
                         this.swapInProgress = true;
                     }
 
-                    //handle invalid swap completion
+                    // handle invalid swap completion
                     if (this.invalidSwap && this.invalidSwapTile) {
                         this.invalidSwapTime += dt;
                         const tile = this.invalidSwapTile;
@@ -1260,13 +1252,11 @@
 
                     //only check for matches after all tiles have finished falling
                     let anyMoving = false;
-                    for (let row = 0; row < this.rows; row++) {
-                        for (let col = 0; col < this.cols; col++) {
-                            if (this.tiles[row][col] && this.tiles[row][col].isMoving) {
-                                anyMoving = true;
-                            }
+                    this.iterate((row, col) => {
+                        if (this.tiles[row][col] && this.tiles[row][col].isMoving) {
+                            anyMoving = true;
                         }
-                    }
+                    });
 
                     if (!anyMoving && this.swapInProgress) {
                         //if this was a user-initiated swap, check its result after the visual swap and grav settles
@@ -1336,13 +1326,12 @@
                     //draw grid lines
                     ctx.strokeStyle = "rgba(100, 100, 150, 0.3)";
                     ctx.lineWidth = 1;
-                    const cols = this.cols1 + this.cols2;
-                    for (let i = 0; i <= cols; i++) {
+                    for (let i = 0; i <= this.cols; i++) {
                         ctx.beginPath();
                         ctx.moveTo(this.boardX + i * this.tileSize, this.boardY);
                         ctx.lineTo(
                             this.boardX + i * this.tileSize,
-                            this.boardY + (i <= this.cols1 ? this.rows1 : this.rows2) * this.tileSize
+                            this.boardY + (i <= this.cols1 ? this.rows : this.rows2) * this.tileSize
                         );
                         ctx.stroke();
                     }
@@ -1350,7 +1339,7 @@
                         ctx.beginPath();
                         ctx.moveTo(this.boardX, this.boardY + i * this.tileSize);
                         ctx.lineTo(
-                            this.boardX + (i <= this.rows2 ? cols : this.cols1) * this.tileSize,
+                            this.boardX + (i <= this.rows2 ? this.cols : this.cols1) * this.tileSize,
                             this.boardY + i * this.tileSize
                         );
                         ctx.stroke();
@@ -1625,18 +1614,24 @@
                         }
                     ];
 
+                    let numNeighbors = 0;
                     for (const n of neighbors) {
                         const nc = col + n.dc;
                         const nr = row + n.dr;
                         if (nc < 0 || nc >= this.cols || nr < 0 || nr >= this.rows) continue;
                         const neighbor = this.grid[nr][nc];
                         if (!neighbor) continue;
-                        if (tile.sides && neighbor.sides && tile.sides[n.mySide] && neighbor.sides[n.theirSide]) {
-                            return true;
+                        numNeighbors ++;
+                        if (
+                            (tile.sides?.[n.mySide] && neighbor.sides?.[n.theirSide]) || 
+                            (!tile.sides?.[n.mySide] && !neighbor.sides?.[n.theirSide])
+                        ) {
+                            continue;
                         }
+                        return false;
                     }
 
-                    return false;
+                    return numNeighbors > 0;
                 }
 
                 update(dt) {
@@ -1689,7 +1684,7 @@
             this.tileBoard = new TileBoard(leftBoardCols, leftBoardRows, rightBoardCols, rightBoardRows, leftBoardX, BOARD_Y, TS);
 
             //trigger a one-time cascade check on the board so seam matches get cleared at startup(?)
-            this.tileBoard.swapInProgress = false;
+            this.tileBoard.swapInProgress = true;
 
             //ref
             window.App = window.App || this;
