@@ -1322,7 +1322,7 @@
                  */
                 draw() {
                     //draw board background
-                    ctx.fillStyle = "rgba(30, 30, 60, 0.8)";
+                    ctx.fillStyle = "rgba(255, 255, 255)";
                     ctx.fillRect(
                         this.boardX - 5,
                         this.boardY - 5,
@@ -1337,26 +1337,26 @@
                     );
 
                     //draw grid lines
-                    ctx.strokeStyle = "rgba(100, 100, 150, 0.3)";
-                    ctx.lineWidth = 1;
-                    for (let i = 0; i <= this.cols; i++) {
-                        ctx.beginPath();
-                        ctx.moveTo(this.boardX + i * this.tileSize, this.boardY);
-                        ctx.lineTo(
-                            this.boardX + i * this.tileSize,
-                            this.boardY + (i <= this.cols1 ? this.rows : this.rows2) * this.tileSize
-                        );
-                        ctx.stroke();
-                    }
-                    for (let i = 0; i <= this.rows1; i++) {
-                        ctx.beginPath();
-                        ctx.moveTo(this.boardX, this.boardY + i * this.tileSize);
-                        ctx.lineTo(
-                            this.boardX + (i <= this.rows2 ? this.cols : this.cols1) * this.tileSize,
-                            this.boardY + i * this.tileSize
-                        );
-                        ctx.stroke();
-                    }
+                    //ctx.strokeStyle = "rgba(10, 10, 150, 0.3)";
+                    //ctx.lineWidth = 1;
+                    // for (let i = 0; i <= this.cols; i++) {  
+                    //     ctx.beginPath();
+                    //     ctx.moveTo(this.boardX + i * this.tileSize, this.boardY);
+                    //     ctx.lineTo(
+                    //         this.boardX + i * this.tileSize,
+                    //         this.boardY + (i <= this.cols1 ? this.rows : this.rows2) * this.tileSize
+                    //     );
+                    //     ctx.stroke();
+                    // }      
+                    // for (let i = 0; i <= this.rows1; i++) {
+                    //     ctx.beginPath();
+                    //     ctx.moveTo(this.boardX, this.boardY + i * this.tileSize);
+                    //     ctx.lineTo(
+                    //         this.boardX + (i <= this.rows2 ? this.cols : this.cols1) * this.tileSize,
+                    //         this.boardY + i * this.tileSize
+                    //     );
+                    //     ctx.stroke();
+                    // }
 
                     //draw tiles
                     this.iterate((row, col) => {
@@ -1366,14 +1366,14 @@
                         }
                     });                    
 
-                    // draw dragged tile
+                    // draw dragged tile   
                     if (this.draggedTile) this.draggedTile.draw(this.tileSize, true);
 
                     //draw pool area
                     const poolTop = 6;
-                    const poolHeight = this.tileSize + 8;
+                    const poolHeight = this.tileSize + 18;
                     ctx.save();
-                    ctx.fillStyle = "rgba(30, 30, 60, 0.8)";
+                    ctx.fillStyle = "rgba(255, 255, 160, 0.8)";
                     ctx.fillRect(0, poolTop, width, poolHeight);
                     ctx.globalAlpha = 1;
                     ctx.restore();
@@ -1526,6 +1526,15 @@
              * but enforces placement rules (starting tile, side-indicator alignment).
              */
             class GridController {
+                
+                /**
+                 * Create a GridController.
+                 * @param {number} x - Left edge of the grid in canvas/world coordinates.
+                 * @param {number} y - Top edge of the grid in canvas/world coordinates.
+                 * @param {number} displayW - Total pixel width of the grid display area.
+                 * @param {number} displayH - Total pixel height of the grid display area.
+                 * @param {number} cellSize - Width and height of each individual cell in pixels.
+                 */
                 constructor(x, y, displayW, displayH, cellSize) {
                     this.x = x;
                     this.y = y;
@@ -1533,6 +1542,17 @@
                     this.dh = displayH;
                     this.cellSize = cellSize;
                     this.tiles = [];
+                    
+                    //tile dragging in grid 
+                    this.draggedTile = null;
+                    this.draggedOrigCol = null;
+                    this.draggedOrigRow = null;
+                    this.dragOffsetX = 0;
+                    this.dragOffsetY = 0;
+                    
+                    //alogirthm check for swapping
+                    this.invalidSwap = false;
+                    this.invalidSwapTimer = 0;
 
                     const startCol = 0;
                     const startRow = 0;
@@ -1550,7 +1570,14 @@
                     //place it without checks
                     this._placeInternal(startTile, startCol, startRow);
                 }
-
+                
+                /**
+                 * Convert world/canvas coordinates to a grid cell address.
+                 * Returns null if the point falls outside the grid's positive cell space.
+                 * @param {number} wx - World X coordinate.
+                 * @param {number} wy - World Y coordinate.
+                 * @returns {{col: number, row: number}|null} The cell under the point, or null.
+                 */
                 getCellAtPos(wx, wy) {
                     const col = Math.floor((wx - this.x) / this.cellSize);
                     const row = Math.floor((wy - this.y) / this.cellSize);
@@ -1562,7 +1589,16 @@
                     }
                     return null;
                 }
-
+                
+                /**
+                 * Unconditionally register a tile at the given cell and snap its visual
+                 * position to the cell center. Does not validate placement rules.
+                 * Use `placeTile` for rule-checked placement from the pool.
+                 * @param {Tile} tile - The tile to place.
+                 * @param {number} col - Destination column index.
+                 * @param {number} row - Destination row index.
+                 * @returns {void}
+                 */
                 _placeInternal(tile, col, row) {
                     this.tiles.push({
                         tile,
@@ -1585,17 +1621,43 @@
                     tile.beingDragged = false;
                     tile.scale = 1;
                 }
-
+                
+                /**
+                 * Attempt to place a tile from the pool into the grid at the given cell,
+                 * running side-indicator validation first via `canPlace`.
+                 * @param {Tile} tile - The tile to place.
+                 * @param {number} col - Target column index.
+                 * @param {number} row - Target row index.
+                 * @returns {boolean} True if the tile was successfully placed, false if validation failed.
+                 */
                 placeTile(tile, col, row) {
                     if (!this.canPlace(tile, col, row)) return false;
                     this._placeInternal(tile, col, row);
                     return true;
                 }
-
+                
+                /**
+                 * Return the tile occupying the given cell, or undefined if the cell is empty.
+                 * @param {number} col - Column index to look up.
+                 * @param {number} row - Row index to look up.
+                 * @returns {Tile|undefined}
+                 */
                 getTile(col, row) {
                     return this.tiles.find(e => e.col == col && e.row == row)?.tile;
                 }
-
+                
+                /**
+                 * Validate whether a tile may be placed at the given cell.
+                 * Rules enforced:
+                 *  - Cell must be within grid bounds.
+                 *  - Cell must currently be empty.
+                 *  - The tile must have at least one existing neighbor.
+                 *  - For every neighbor, the touching sides must either both have indicators or both lack them.
+                 * @param {Tile} tile - The tile being considered for placement.
+                 * @param {number} col - Target column index.
+                 * @param {number} row - Target row index.
+                 * @returns {boolean} True if placement is legal, false otherwise.
+                 */
                 canPlace(tile, col, row) {
                     if (col < 0 || col >= this.cols || row < 0 || row >= this.rows) return false;
                     if (this.getTile(col, row)) return false;
@@ -1646,17 +1708,134 @@
 
                     return numNeighbors > 0;
                 }
+                
+                /**
+                 * Remove the tile entry at the given cell from the internal tiles array.
+                 * Does not animate or return the tile — callers are responsible for
+                 * re-placing or discarding the tile object afterward.
+                 * @param {number} col - Column of the tile to remove.
+                 * @param {number} row - Row of the tile to remove.
+                 * @returns {void}
+                 */
+                remove(col, row) {
+                    const idx = this.tiles.findIndex(e => e.col === col && e.row === row);
+                    if (idx >= 0) this.tiles.splice(idx, 1);
+                }
+                
+                 /**
+                 * Process pointer input each frame to support dragging tiles within the grid.
+                 * On press: lifts the tile under the pointer out of the grid.
+                 * On hold: follows the pointer.
+                 * On release: attempts to place the tile in the target cell, running
+                 *  anPlace checks for both empty-cell drops and same-cell swaps.
+                 *   On failure, the tile snaps back to its origin and triggers the invalid flash.
+                 * @returns {void}
+                 */
+                handleInput() {
+                    //for simplicity. Don't have to keep finding the mouse object
+                    const { screenX, screenY, down, wasDown } = mouse;
+                    const clickHappened = down && !wasDown;
+                    const released = !down && wasDown;
 
+                    if (clickHappened && !this.draggedTile) {
+                        const { x: wx, y: wy } = screenToWorld(screenX, screenY);
+                        const cell = this.getCellAtPos(wx, wy);
+                        if (cell) {
+                            const tile = this.getTile(cell.col, cell.row);
+                            if (tile) {
+                                //lift tile off the grid
+                                this.remove(cell.col, cell.row);
+                                this.draggedTile = tile;
+                                this.draggedOrigCol = cell.col;
+                                this.draggedOrigRow = cell.row;
+                                this.dragOffsetX = wx - tile.x;
+                                this.dragOffsetY = wy - tile.y;
+                                tile.beingDragged = true;
+                                tile.scale = 1.2;
+                            }
+                        }
+                    } 
+                    else if (this.draggedTile && down) {
+                        const { x: wx, y: wy } = screenToWorld(screenX, screenY);
+                        this.draggedTile.x = wx - this.dragOffsetX;
+                        this.draggedTile.y = wy - this.dragOffsetY;
+
+                    } 
+                    else if (released && this.draggedTile) {
+                        const tile = this.draggedTile;
+                        tile.beingDragged = false;
+                        tile.scale = 1;
+                        this.draggedTile = null;
+
+                        const origCol = this.draggedOrigCol;
+                        const origRow = this.draggedOrigRow;
+                        this.draggedOrigCol = null;
+                        this.draggedOrigRow = null;
+
+                        const dropCell = this.getCellAtPos(tile.x, tile.y);
+                        let placed = false;
+
+                        if (dropCell) {
+                            const existing = this.getTile(dropCell.col, dropCell.row);
+
+                            if (existing) {
+                                //temporarily remove existing so canPlace sees clean neighbors
+                                this.remove(dropCell.col, dropCell.row);
+
+                                const tileCanGo     = this.canPlace(tile,     dropCell.col, dropCell.row);
+                                const existingCanGo = this.canPlace(existing, origCol,      origRow);
+
+                                if (tileCanGo && existingCanGo) {
+                                    //valid swap commit both moves
+                                    this._placeInternal(existing, origCol,      origRow);
+                                    this._placeInternal(tile,     dropCell.col, dropCell.row);
+                                    placed = true;
+                                }
+                                else {
+                                    //invalid swap put existing back in place, then snap tile home
+                                    this._placeInternal(existing, dropCell.col, dropCell.row);
+                                }
+                            } 
+                            else {
+                                //empty cell case validate before placing
+                                if (this.canPlace(tile, dropCell.col, dropCell.row)) {
+                                    this._placeInternal(tile, dropCell.col, dropCell.row);
+                                    placed = true;
+                                }
+                            }
+                        }
+
+                        if (!placed) {
+                            //return tile to its original position and flash an invalid indicator
+                            this._placeInternal(tile, origCol, origRow);
+                            this.invalidSwap = true;
+                            this.invalidSwapTimer = 0;
+                        }
+                    }
+                }
+
+                /**
+                 * Advance grid animations and decay timed state.
+                 * @param {number} dt - Delta time in seconds since the last frame.
+                 * @returns {void}
+                 */
                 update(dt) {
                     for (const entry of this.tiles)
                         if (entry.tile) entry.tile.animate(dt);
                 }
-
+                
+                /**
+                 * Render the grid background, cell lines, all placed tiles, the in-flight
+                 * dragged tile (drawn last so it appears on top), and the invalid-swap
+                 * flash overlay if active.
+                 * @returns {void}
+                 */
                 draw() {
                     ctx.save();
-                    ctx.fillStyle = 'rgba(20,20,40,0.6)';
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
                     ctx.fillRect(this.x - 5, this.y - 5, this.dw + 10, this.dh + 10);
-                    ctx.strokeStyle = 'rgba(180,180,180,0.6)';
+                    ctx.strokeStyle = 'rgba(18, 18, 18, 0.6)';
+                    
                     for (let x = this.x; x <= this.x + this.dw; x += this.cellSize) {
                         ctx.beginPath();
                         ctx.moveTo(x, this.y);
@@ -1672,13 +1851,17 @@
                     for (const entry of this.tiles) {
                         if (entry && entry.tile) entry.tile.draw(this.cellSize, false);
                     }
+                    
+                    //draw the tile being dragged above everything else
+                    if (this.draggedTile) this.draggedTile.draw(this.cellSize, true);
                     ctx.restore();
                 }
             }
+            
             //layout junk
-            const GAP = 6;
+            const GAP = 50;
             const TS = Math.floor(Math.min(width, height) / 12);
-            const BOARD_Y = Math.floor(height * 0.08);
+            const BOARD_Y = TS + 32;
 
             // left board
             const leftBoardCols = 4;
@@ -1721,6 +1904,7 @@
 
             if (this.rightGrid) {
                 this.rightGrid.update(dt);
+                this.rightGrid.handleInput();
                 this.rightGrid.draw();
             }
             if (b) b.draw();
