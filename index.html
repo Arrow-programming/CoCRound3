@@ -1495,7 +1495,6 @@
 
                         //if no swap, animate back to original board position
                         if (!swapped) {
-                            window.console.log("HI?")
                             tile.targetX = originalTile.x;
                             tile.targetY = originalTile.y;
                             tile.isMoving = true;
@@ -1505,7 +1504,6 @@
                         if (this.draggedTile) this.draggedTile.scale = 1;
                         this.draggedTile = null;
                         this.draggedTileOriginal = null;
-                        window.console.log(tile)
                     }
                 }
             }
@@ -1515,20 +1513,16 @@
              * but enforces placement rules (starting tile, side-indicator alignment).
              */
             class GridController {
-                constructor(x, y, cellSize, cols = 4, rows = 2) {
+                constructor(x, y, displayW, displayH, cellSize) {
                     this.x = x;
                     this.y = y;
+                    this.dw = displayW;
+                    this.dh = displayH;
                     this.cellSize = cellSize;
-                    this.cols = cols;
-                    this.rows = rows;
-                    this.grid = Array.from({
-                        length: rows
-                    }, () => Array(cols).fill(null));
                     this.tiles = [];
 
                     const startCol = 0;
                     const startRow = 0;
-
 
                     const startTile = new Tile(startCol, startRow, 0);
 
@@ -1547,7 +1541,7 @@
                 getCellAtPos(wx, wy) {
                     const col = Math.floor((wx - this.x) / this.cellSize);
                     const row = Math.floor((wy - this.y) / this.cellSize);
-                    if (col >= 0 && col < this.cols && row >= 0 && row < this.rows) {
+                    if (col >= 0 && row >= 0) {
                         return {
                             col,
                             row
@@ -1557,7 +1551,6 @@
                 }
 
                 _placeInternal(tile, col, row) {
-                    this.grid[row][col] = tile;
                     this.tiles.push({
                         tile,
                         col,
@@ -1586,11 +1579,16 @@
                     return true;
                 }
 
+                getTile(col, row) {
+                    return this.tiles.find(e => e.col == col && e.row == row)?.tile;
+                }
+
                 canPlace(tile, col, row) {
                     if (col < 0 || col >= this.cols || row < 0 || row >= this.rows) return false;
-                    if (this.grid[row][col]) return false;
+                    if (this.getTile(col, row)) return false;
 
-                    const neighbors = [{
+                    const neighbors = [
+                        {
                             dc: -1,
                             dr: 0,
                             mySide: 'left',
@@ -1620,8 +1618,8 @@
                     for (const n of neighbors) {
                         const nc = col + n.dc;
                         const nr = row + n.dr;
-                        if (nc < 0 || nc >= this.cols || nr < 0 || nr >= this.rows) continue;
-                        const neighbor = this.grid[nr][nc];
+                        if (nc < 0 || nr < 0) continue;
+                        const neighbor = this.getTile(nc, nr);
                         if (!neighbor) continue;
                         numNeighbors ++;
                         if (
@@ -1644,15 +1642,19 @@
                 draw() {
                     ctx.save();
                     ctx.fillStyle = 'rgba(20,20,40,0.6)';
-                    ctx.fillRect(this.x - 4, this.y - 4, this.cols * this.cellSize + 8, this.rows * this.cellSize + 8);
+                    ctx.fillRect(this.x - 5, this.y - 5, this.dw + 10, this.dh + 10);
                     ctx.strokeStyle = 'rgba(180,180,180,0.6)';
-                    ctx.lineWidth = 1;
-                    for (let r = 0; r < this.rows; r++) {
-                        for (let c = 0; c < this.cols; c++) {
-                            const gx = this.x + c * this.cellSize;
-                            const gy = this.y + r * this.cellSize;
-                            ctx.strokeRect(gx, gy, this.cellSize, this.cellSize);
-                        }
+                    for (let x = this.x; x <= this.x + this.dw; x += this.cellSize) {
+                        ctx.beginPath();
+                        ctx.moveTo(x, this.y);
+                        ctx.lineTo(x, this.y + this.dh);
+                        ctx.stroke();
+                    }
+                    for (let y = this.y; y <= this.y + this.dh; y += this.cellSize) {
+                        ctx.beginPath();
+                        ctx.moveTo(this.x, y);
+                        ctx.lineTo(this.x + this.dw, y);
+                        ctx.stroke();
                     }
                     for (const entry of this.tiles) {
                         if (entry && entry.tile) entry.tile.draw(this.cellSize, false);
@@ -1665,7 +1667,7 @@
             const TS = Math.floor(Math.min(width, height) / 12);
             const BOARD_Y = Math.floor(height * 0.08);
 
-            //left board
+            // left board
             const leftBoardCols = 4;
             const leftBoardX = 5;
             const leftBoardRows = Math.floor((height - BOARD_Y) / TS);
@@ -1676,13 +1678,11 @@
             const rightBoardCols = Math.floor((width - rightBoardX) / TS);
             const rightBoardY = BOARD_Y;
 
-            //placement grid  centered in the space below the right board
-            const gridCols = 6;
-            const gridRows = Math.floor((height - (rightBoardY + rightBoardRows * TS + GAP)) / TS);
-            const gridX = rightBoardX + Math.floor(((rightBoardCols * TS) - (gridCols * TS)) / 2);
-            const gridY = rightBoardY + rightBoardRows * TS + GAP;
+            // placement grid centered in the space below the right board
+            const gridX = leftBoardX + leftBoardCols * TS + GAP;
+            const gridY = BOARD_Y + rightBoardRows * TS + GAP;
 
-            this.rightGrid = new GridController(gridX, gridY, TS, gridCols, Math.max(1, gridRows));
+            this.rightGrid = new GridController(gridX, gridY, rightBoardCols * TS, (leftBoardRows - rightBoardRows) * TS, TS);
             this.tileBoard = new TileBoard(leftBoardCols, leftBoardRows, rightBoardCols, rightBoardRows, leftBoardX, BOARD_Y, TS);
 
             //trigger a one-time cascade check on the board so seam matches get cleared at startup(?)
