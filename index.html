@@ -1348,13 +1348,15 @@
                     //draw tiles
                     this.iterate((row, col) => {
                         const tile = this.tiles[row][col];
-                        if (tile) {
-                            const isDragging = tile === this.draggedTile;
-                            tile.draw(this.tileSize, isDragging);
+                        if (tile && tile != this.draggedTile) {
+                            tile.draw(this.tileSize, false);
                         }
                     });                    
 
-                    //draw pool are
+                    // draw dragged tile
+                    if (this.draggedTile) this.draggedTile.draw(this.tileSize, true);
+
+                    //draw pool area
                     const poolTop = 6;
                     const poolHeight = this.tileSize + 8;
                     ctx.save();
