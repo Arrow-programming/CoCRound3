@@ -673,7 +673,7 @@
                 /**
                  * Create a TileBoard that manages the grid of tiles and game mechanics.
                  * @param {number} [cols1=6]
-                 * @param {number} [rows1=12]
+                 * @param {number} [rows1=12] 
                  * @param {number} [cols2=6]
                  * @param {number} [rows2=6]
                  * @param {number} [boardX=20]
@@ -682,9 +682,11 @@
                  */
                 constructor(cols1 = 6, rows1 = 12, cols2 = 6, rows2 = 6, boardX = 20, boardY = 120, tileSize = 85) {
                     this.cols1 = cols1;
-                    this.rows1 = rows1;
-                    this.cols2 = cols2;
-                    this.rows2 = rows2;
+                    this.rows1 = rows1; 
+                    this.cols2 = cols2; 
+                    this.rows2 = rows2; 
+                    this.cols = this.cols1 + this.cols2;
+                    this.rows = this.rows1;
                     this.boardX = boardX;
                     this.boardY = boardY;
                     this.tileSize = tileSize;
@@ -720,16 +722,30 @@
                  * and at least one possible move is present.
                  * @returns {void}
                  */
+                // initBoard() {
+                //     // fill board regenerate entire board until no initial connected matches exist
+                //     this.iterate((row, col) => {
+                //         const colorIndex = Math.floor(Math.random() * tileColors.length);
+                //         const tile = new Tile(col, row, colorIndex);
+                //         tile.updatePosition(this.tileSize, this.boardX, this.boardY);
+                //         this.tiles[row][col] = tile;
+                //         // tag tile with board ref. This allows me to have multiple boards that work together
+                //         tile.board = this;
+                //     });
+                // }
                 initBoard() {
-                    // fill board regenerate entire board until no initial connected matches exist
-                    this.iterate((row, col) => {
-                        const colorIndex = Math.floor(Math.random() * tileColors.length);
-                        const tile = new Tile(col, row, colorIndex);
-                        tile.updatePosition(this.tileSize, this.boardX, this.boardY);
-                        this.tiles[row][col] = tile;
-                        // tag tile with board ref. This allows me to have multiple boards that work together
-                        tile.board = this;
-                    });
+                    let attempts = 0;
+                    do {
+                        this.iterate((row, col) => {
+                            const colorIndex = Math.floor(Math.random() * tileColors.length);
+                            const tile = new Tile(col, row, colorIndex);
+                            tile.updatePosition(this.tileSize, this.boardX, this.boardY);
+                            this.tiles[row][col] = tile;
+                            tile.board = this;
+                        });
+                        attempts++;
+                        if (attempts > 200) break;
+                    } while (this.findMatches().length > 0 || !this.hasPossibleMove());
                 }
 
                 /** Iterates a function through a TileBoard.
