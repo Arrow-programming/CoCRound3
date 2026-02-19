@@ -226,6 +226,7 @@
      * @param {number} screenY - Client Y coordinate from mouse event.
      * @returns {{x:number,y:number}} Coordinates in canvas space.
      */
+    
     function screenToWorld(screenX, screenY) {
         //get canvas position and dimensions
         const rect = canvas.getBoundingClientRect();
@@ -660,58 +661,34 @@
                             this.invalidDropTime = 0;
                         }
                     }
-                    /*
-
-                                        //if this was a user-initiated swap, check its result after the visual swap
-                                        if (this.invaid) {
-                                            const matches = this.findMatches();
-                                            if (matches.length > 0) {
-                                                //valid swap so clear pending and handle matches normally
-                                                this.pendingUserSwap = null;
-                                                this.handleMatches();
-                                            } else {
-                                                //invalid swap so reverse with animation and show invalid overlay
-                                                const t1 = this.pendingUserSwap.tile1;
-                                                const t2 = this.pendingUserSwap.tile2;
-                                                this.pendingUserSwap = null;
-                                                this.invalidSwap = true;
-                                                this.invalidSwapTile = t1;
-                                                this.invalidSwapTime = 0;
-                                                this.reversingSwap = { tile1: t1, tile2: t2 };
-                                                this.reverseSwap(t1, t2);
-                                            }
-                                        } else if (this.justReversed) {
-                                            //finished reversing an invalid swap clear flags
-                                            this.swapInProgress = false;
-                                            this.justReversed = false;
-                                            this.invalidSwap = false;
-                                            this.invalidSwapTile = null;
-                                            this.invalidSwapTime = 0;
-                                            this.reversingSwap = null;
-                                        }*/
                 }
             }
 
             /**
-             * The main tile board class. Contains a 2D grid of `Tile` objects,
+             * The main tile board class. This is shaped like a rectangle, except
+             * the bottom right is taken out. This stores a 2D array of `Tile` objects,
              * handles swapping, gravity, match detection, and board updates.
              */
             class TileBoard {
                 /**
                  * Create a TileBoard that manages the grid of tiles and game mechanics.
-                 * @param {number} [cols=6]
-                 * @param {number} [rows=6]
+                 * @param {number} [cols1=6]
+                 * @param {number} [rows1=12]
+                 * @param {number} [cols2=6]
+                 * @param {number} [rows2=6]
                  * @param {number} [boardX=20]
                  * @param {number} [boardY=120]
                  * @param {number} [tileSize=85]
                  */
-                constructor(cols = 6, rows = 6, boardX = 20, boardY = 120, tileSize = 85) {
-                    this.cols = cols;
-                    this.rows = rows;
+                constructor(cols1 = 6, rows1 = 12, cols2 = 6, rows2 = 6, boardX = 20, boardY = 120, tileSize = 85) {
+                    this.cols1 = cols1;
+                    this.rows1 = rows1;
+                    this.cols2 = cols2;
+                    this.rows2 = rows2;
                     this.boardX = boardX;
                     this.boardY = boardY;
                     this.tileSize = tileSize;
-                    this.tiles = [];
+                    this.tiles = Array.from({ length: this.rows1 }).map(e => []);
                     this.pool = new TilePool(this.tileSize, 12, 12, this);
                     this.selectedTile = null;
                     this.draggedTile = null;
@@ -735,9 +712,6 @@
                     //set true when reverse animation running
                     this.justReversed = false;
 
-                    //for multiple boards
-                    this.matchDelegate = null;
-
                     this.initBoard();
                 }
 
@@ -747,28 +721,32 @@
                  * @returns {void}
                  */
                 initBoard() {
-                    //fill board regenerate entire board until no initial connected matches exist
-                    const makeBoard = () => {
-                        for (let row = 0; row < this.rows; row++) {
-                            this.tiles[row] = [];
-                            for (let col = 0; col < this.cols; col++) {
-                                const colorIndex = Math.floor(Math.random() * tileColors.length);
-                                const tile = new Tile(col, row, colorIndex);
-                                tile.updatePosition(this.tileSize, this.boardX, this.boardY);
-                                this.tiles[row][col] = tile;
-                                //tag tile with board ref. This allows me to have multiple boards that work together
-                                tile.board = this;
-                            }
-                        }
-                    };
-
-                    //regenerate until there are no immediate matches and at least one possible move
-                    do {
-                        makeBoard();
-                    } while (this.findMatches().length > 0 || !this.hasPossibleMove());
+                    // fill board regenerate entire board until no initial connected matches exist
+                    this.iterate((row, col) => {
+                        const colorIndex = Math.floor(Math.random() * tileColors.length);
+                        const tile = new Tile(col, row, colorIndex);
+                        tile.updatePosition(this.tileSize, this.boardX, this.boardY);
+                        this.tiles[row][col] = tile;
+                        // tag tile with board ref. This allows me to have multiple boards that work together
+                        tile.board = this;
+                    });
                 }
 
-                //initial board will be regenerated if any connected matches are present
+                /** Iterates a function through a TileBoard.
+                 * 
+                 * @param {(r, c) => *} callback
+                 * @returns {void}
+                 */
+                iterate(callback) {
+                    for (let r = 0; r < this.rows1; r++) {
+                        const cols = r < this.rows2 ? this.cols1 + this.cols2 : this.cols1;
+                        for (let c = 0; c < cols; c++) {
+                            callback(r, c);
+                        }
+                    }
+                }
+
+                // initial board will be regenerated if any connected matches are present
                 /**
                  * Check whether a tile placement is valid. Placeholder that currently always returns true.
                  * @param {number} col
@@ -776,7 +754,22 @@
                  * @returns {boolean}
                  */
                 isTileValid(col, row) {
-                    return true;
+                    return true; // HELP: btw what is this supposed to do, if it checks if in bounds then my function below does just that
+                }
+
+                /**
+                 * Checks if tile row and col is in bounds.
+                 * @param {number} row
+                 * @param {number} col
+                 * @returns {boolean} 
+                 */
+                inBounds(row, col) {
+                    return (
+                        row >= 0 && col >= 0 && (
+                            (row < this.rows2 && col < this.cols1 + this.cols2) ||
+                            (row < this.rows1 && col < this.cols1)
+                        )
+                    );
                 }
 
                 /**
@@ -789,9 +782,7 @@
                     const col = Math.floor((x - this.boardX) / this.tileSize);
                     const row = Math.floor((y - this.boardY) / this.tileSize);
 
-                    if (col >= 0 && col < this.cols && row >= 0 && row < this.rows) {
-                        return this.tiles[row][col];
-                    }
+                    if (this.inBounds(row, col)) return this.tiles[row][col];
                     return null;
                 }
 
@@ -901,80 +892,81 @@
                  * @returns {Tile[]}
                  */
                 findMatches() {
-                    //find connected components where tiles have same color and both have indicators on the touching side
+                    // find connected components where tiles have same color and both have indicators on the touching side
                     const matched = [];
                     const visited = Array.from({
-                        length: this.rows
-                    }, () => Array(this.cols).fill(false));
+                        length: this.rows2
+                    }, () => Array(this.cols1 + this.cols2).fill(false)).concat(
+                        Array.from({
+                            length: this.rows1
+                        }, () => Array(this.cols1).fill(false))
+                    );
+                    
+                    this.iterate((r, c) => {
+                        const start = this.tiles[r][c];
+                        if (!start || visited[r][c]) return;
 
-                    const inBounds = (r, c) => r >= 0 && r < this.rows && c >= 0 && c < this.cols;
+                        const color = start.colorIndex;
+                        const stack = [start];
+                        const component = [];
 
-                    for (let r = 0; r < this.rows; r++) {
-                        for (let c = 0; c < this.cols; c++) {
-                            const start = this.tiles[r][c];
-                            if (!start || visited[r][c]) continue;
+                        while (stack.length) {
+                            const t = stack.pop();
+                            const tr = t.row;
+                            const tc = t.col;
+                            if (visited[tr][tc]) continue;
+                            visited[tr][tc] = true;
+                            component.push(t);
 
-                            const color = start.colorIndex;
-                            const stack = [start];
-                            const component = [];
+                            //check four neighbors for bidirectional (fun word lol) indicator connection
+                            const neighbors = [
+                                {
+                                    rr: tr - 1,
+                                    cc: tc,
+                                    side: 'up',
+                                    opp: 'down'
+                                },
+                                {
+                                    rr: tr + 1,
+                                    cc: tc,
+                                    side: 'down',
+                                    opp: 'up'
+                                },
+                                {
+                                    rr: tr,
+                                    cc: tc - 1,
+                                    side: 'left',
+                                    opp: 'right'
+                                },
+                                {
+                                    rr: tr,
+                                    cc: tc + 1,
+                                    side: 'right',
+                                    opp: 'left'
+                                }
+                            ];
 
-                            while (stack.length) {
-                                const t = stack.pop();
-                                const tr = t.row;
-                                const tc = t.col;
-                                if (visited[tr][tc]) continue;
-                                visited[tr][tc] = true;
-                                component.push(t);
+                            for (const n of neighbors) {
+                                if (!this.inBounds(n.rr, n.cc)) continue;
+                                const nb = this.tiles[n.rr][n.cc];
+                                if (!nb) continue;
+                                if (visited[n.rr][n.cc]) continue;
+                                if (nb.colorIndex !== color) continue;
 
-                                //check four neighbors for bidirectional (fun word lol) indicator connection
-                                const neighbors = [{
-                                        rr: tr - 1,
-                                        cc: tc,
-                                        side: 'up',
-                                        opp: 'down'
-                                    },
-                                    {
-                                        rr: tr + 1,
-                                        cc: tc,
-                                        side: 'down',
-                                        opp: 'up'
-                                    },
-                                    {
-                                        rr: tr,
-                                        cc: tc - 1,
-                                        side: 'left',
-                                        opp: 'right'
-                                    },
-                                    {
-                                        rr: tr,
-                                        cc: tc + 1,
-                                        side: 'right',
-                                        opp: 'left'
-                                    }
-                                ];
-
-                                for (const n of neighbors) {
-                                    if (!inBounds(n.rr, n.cc)) continue;
-                                    const nb = this.tiles[n.rr][n.cc];
-                                    if (!nb) continue;
-                                    if (visited[n.rr][n.cc]) continue;
-                                    if (nb.colorIndex !== color) continue;
-
-                                    //both tiles must have indicators on the contacting sides
-                                    if (t.sides[n.side] && nb.sides[n.opp]) {
-                                        stack.push(nb);
-                                    }
+                                //both tiles must have indicators on the contacting sides
+                                if (t.sides[n.side] && nb.sides[n.opp]) {
+                                    stack.push(nb);
                                 }
                             }
-
-                            if (component.length >= 3) {
-                                //limit match removal to a maximum of 3 tiles per connected component
-                                const toAdd = component.slice(0, 3);
-                                for (const tile of toAdd) matched.push(tile);
-                            }
                         }
-                    }
 
+                        if (component.length >= 3) {
+                            //limit match removal to a maximum of 3 tiles per connected component
+                            const toAdd = component.slice(0, 3);
+                            for (const tile of toAdd) matched.push(tile);
+                        }
+                    });
+                    
                     return matched;
                 }
 
@@ -984,7 +976,7 @@
                  */
                 handleMatches(matched) {
                     if (!matched) {
-                        matched = this.matchDelegate ? this.matchDelegate() : this.findMatches();
+                        matched = this.findMatches();
                     }
                     if (matched.length === 0) {
                         this.swapInProgress = false;
@@ -1263,7 +1255,7 @@
                     if (!anyMoving && this.swapInProgress) {
                         //if this was a user-initiated swap, check its result after the visual swap and grav settles
                         if (this.pendingUserSwap) {
-                            const matches = this.matchDelegate ? this.matchDelegate() : this.findMatches();
+                            const matches = this.findMatches();
                             if (matches.length > 0) {
                                 //valid swap so clear pending and handle matches normally
                                 this.pendingUserSwap = null;
@@ -1293,7 +1285,7 @@
                             this.reversingSwap = null;
                         } else {
                             //check for cascade matches after gravity settles
-                            const matches = this.matchDelegate ? this.matchDelegate() : this.findMatches();
+                            const matches = this.findMatches();
                             if (matches.length > 0) {
                                 //pass in baby
                                 this.handleMatches(matches);
@@ -1315,36 +1307,47 @@
                     ctx.fillRect(
                         this.boardX - 5,
                         this.boardY - 5,
-                        this.cols * this.tileSize + 10,
-                        this.rows * this.tileSize + 10
+                        this.cols1 * this.tileSize + 10,
+                        this.rows1 * this.tileSize + 10
+                    );
+                    ctx.fillRect(
+                        this.boardX + this.cols1 * this.tileSize + 5,
+                        this.boardY - 5,
+                        this.cols2 * this.tileSize,
+                        this.rows2 * this.tileSize + 10
                     );
 
                     //draw grid lines
                     ctx.strokeStyle = "rgba(100, 100, 150, 0.3)";
                     ctx.lineWidth = 1;
-                    for (let i = 0; i <= this.cols; i++) {
+                    const cols = this.cols1 + this.cols2;
+                    for (let i = 0; i <= cols; i++) {
                         ctx.beginPath();
                         ctx.moveTo(this.boardX + i * this.tileSize, this.boardY);
-                        ctx.lineTo(this.boardX + i * this.tileSize, this.boardY + this.rows * this.tileSize);
+                        ctx.lineTo(
+                            this.boardX + i * this.tileSize,
+                            this.boardY + (i <= this.cols1 ? this.rows1 : this.rows2) * this.tileSize
+                        );
                         ctx.stroke();
                     }
-                    for (let i = 0; i <= this.rows; i++) {
+                    for (let i = 0; i <= this.rows1; i++) {
                         ctx.beginPath();
                         ctx.moveTo(this.boardX, this.boardY + i * this.tileSize);
-                        ctx.lineTo(this.boardX + this.cols * this.tileSize, this.boardY + i * this.tileSize);
+                        ctx.lineTo(
+                            this.boardX + (i <= this.rows2 ? cols : this.cols1) * this.tileSize,
+                            this.boardY + i * this.tileSize
+                        );
                         ctx.stroke();
                     }
 
                     //draw tiles
-                    for (let row = 0; row < this.rows; row++) {
-                        for (let col = 0; col < this.cols; col++) {
-                            const tile = this.tiles[row][col];
-                            if (tile) {
-                                const isDragging = tile === this.draggedTile;
-                                tile.draw(this.tileSize, isDragging);
-                            }
+                    this.iterate((row, col) => {
+                        const tile = this.tiles[row][col];
+                        if (tile) {
+                            const isDragging = tile === this.draggedTile;
+                            tile.draw(this.tileSize, isDragging);
                         }
-                    }
+                    });                    
 
                     //draw pool are
                     const poolTop = 6;
@@ -1392,7 +1395,6 @@
                     //detect drag 
                     const clickHappened = down && !wasDown;
                     const released = !down && wasDown;
-
                     if (clickHappened) {
                         //start dragging a tile use global screenToWorld function
                         const worldPos = screenToWorld(screenX, screenY);
@@ -1486,6 +1488,7 @@
 
                         //if no swap, animate back to original board position
                         if (!swapped) {
+                            window.console.log("HI?")
                             tile.targetX = originalTile.x;
                             tile.targetY = originalTile.y;
                             tile.isMoving = true;
@@ -1495,12 +1498,10 @@
                         if (this.draggedTile) this.draggedTile.scale = 1;
                         this.draggedTile = null;
                         this.draggedTileOriginal = null;
+                        window.console.log(tile)
                     }
                 }
             }
-
-            //initialize the tile board
-            this.tileBoard = new TileBoard(6, 6, 20, 120, 65);
 
             /**
              * GridController: right-side placement grid that accepts tiles from the pool
@@ -1653,7 +1654,7 @@
 
             //left board
             const leftBoardCols = 4;
-            const leftBoardX = 0;
+            const leftBoardX = 5;
             const leftBoardRows = Math.floor((height - BOARD_Y) / TS);
 
             // right board
@@ -1669,111 +1670,13 @@
             const gridY = rightBoardY + rightBoardRows * TS + GAP;
 
             this.rightGrid = new GridController(gridX, gridY, TS, gridCols, Math.max(1, gridRows));
-            this.tileBoardLeft = new TileBoard(leftBoardCols, leftBoardRows, leftBoardX, BOARD_Y, TS);
-            this.tileBoardRight = new TileBoard(rightBoardCols, rightBoardRows, rightBoardX, rightBoardY, TS);
+            this.tileBoard = new TileBoard(leftBoardCols, leftBoardRows, rightBoardCols, rightBoardRows, leftBoardX, BOARD_Y, TS);
 
-            const unifiedChecker = () => this.findMatchesUnified();
-            this.tileBoardLeft.matchDelegate = unifiedChecker;
-            this.tileBoardRight.matchDelegate = unifiedChecker;
-
-            //trigger a one-time cascade check on both boards so seam matches get cleared at startup(?)
-            this.tileBoardLeft.swapInProgress = true;
-            this.tileBoardRight.swapInProgress = true;
+            //trigger a one-time cascade check on the board so seam matches get cleared at startup(?)
+            this.tileBoard.swapInProgress = false;
 
             //ref
             window.App = window.App || this;
-        };
-
-        //finally! This took forever to figure out
-        App.prototype.findMatchesUnified = function() {
-            const boardL = this.tileBoardLeft;
-            const boardR = this.tileBoardRight;
-
-            const LC = boardL.cols;
-            const RC = boardR.cols;
-            const ROWS = Math.max(boardL.rows, boardR.rows);
-            const totalCols = LC + RC;
-
-            const getTile = (r, c) => {
-                if (c < 0 || c >= totalCols || r < 0) return null;
-                if (c < LC) return (r < boardL.rows && boardL.tiles[r]) ? boardL.tiles[r][c] : null;
-                return (r < boardR.rows && boardR.tiles[r]) ? boardR.tiles[r][c - LC] : null;
-            };
-
-            const visited = Array.from({
-                length: ROWS
-            }, () => Array(totalCols).fill(false));
-            const matched = [];
-
-            for (let r = 0; r < ROWS; r++) {
-                for (let c = 0; c < totalCols; c++) {
-                    const start = getTile(r, c);
-                    //if (!start || visited[r][c]) continue;
-                    if (!start || visited[r][c] || start.matched || start.toBePooled) continue;
-
-                    const color = start.colorIndex;
-                    const stack = [{
-                        r,
-                        c
-                    }];
-                    const component = [];
-
-                    while (stack.length) {
-                        const {
-                            r: tr,
-                            c: tc
-                        } = stack.pop();
-                        if (visited[tr][tc]) continue;
-                        const t = getTile(tr, tc);
-                        if (!t) continue;
-                        visited[tr][tc] = true;
-                        component.push(t);
-
-                        const neighbors = [{
-                                rr: tr - 1,
-                                cc: tc,
-                                side: 'up',
-                                opp: 'down'
-                            },
-                            {
-                                rr: tr + 1,
-                                cc: tc,
-                                side: 'down',
-                                opp: 'up'
-                            },
-                            {
-                                rr: tr,
-                                cc: tc - 1,
-                                side: 'left',
-                                opp: 'right'
-                            },
-                            {
-                                rr: tr,
-                                cc: tc + 1,
-                                side: 'right',
-                                opp: 'left'
-                            }
-                        ];
-                        for (const n of neighbors) {
-                            const nb = getTile(n.rr, n.cc);
-                            //if (!nb || visited[n.rr][n.cc]) continue;
-                            if (!nb || visited[n.rr][n.cc] || nb.matched || nb.toBePooled) continue;
-                            if (nb.colorIndex !== color) continue;
-                            if (t.sides[n.side] && nb.sides[n.opp]) {
-                                stack.push({
-                                    r: n.rr,
-                                    c: n.cc
-                                });
-                            }
-                        }
-                    }
-
-                    if (component.length >= 3) {
-                        component.slice(0, 3).forEach(tile => matched.push(tile));
-                    }
-                }
-            }
-            return matched;
         };
 
         /* Run the game */
@@ -1781,28 +1684,20 @@
             ctx.fillStyle = "rgb(250, 250, 225)";
             ctx.fillRect(0, 0, width, height);
 
-            const bL = this.tileBoardLeft;
-            const bR = this.tileBoardRight;
+            const b = this.tileBoard;
 
-            if (bL) {
-                bL.update(dt);
-                bL.pool.update(dt);
-                bL.handleInput();
-                bL.pool.handleInput();
-            }
-            if (bR) {
-                bR.update(dt);
-                bR.pool.update(dt);
-                bR.handleInput();
-                bR.pool.handleInput();
+            if (b) {
+                b.update(dt);
+                b.pool.update(dt);
+                b.handleInput();
+                b.pool.handleInput();
             }
 
             if (this.rightGrid) {
                 this.rightGrid.update(dt);
                 this.rightGrid.draw();
             }
-            if (bL) bL.draw();
-            if (bR) bR.draw();
+            if (b) b.draw();
         };
 
         /* Run the scenes */
@@ -1955,7 +1850,7 @@
         function loop() {
             requestAnimationFrame(loop);
         }
-        requestAnimationFrame(loop);
+        //requestAnimationFrame(loop);
     })();
 
 
@@ -1978,6 +1873,7 @@
      * @param {DOMHighResTimeStamp|number} timestamp
      * @returns {void}
      */
+    
     const render = (timestamp) => {
         try {
             //prefer the rAF timestamp when present
@@ -1995,7 +1891,6 @@
 
             ctx.setTransform(dprVal, 0, 0, dprVal, 0, 0);
             ctx.clearRect(0, 0, canvas.width / dprVal, canvas.height / dprVal);
-
             //run the game based on deltatime
             App.run(dt);
 
@@ -2015,7 +1910,7 @@
 
             button2.addEventListener("click", () => {
                 if (App && typeof App.resetGame === 'function') {
-                    App.resetGame();
+                    //App.resetGame();
                 }
             });
 
@@ -2028,7 +1923,7 @@
             console.error("Main loop error\n" + e.stack);
         }
     };
-
+    
     //Replace interval with rAF
     let rafId = null;
     let running = true;

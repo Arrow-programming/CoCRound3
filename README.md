@@ -1,2 +1,2 @@
 # CoCRound3
-Lorem ipsum sit dom me amet
+Lorem ipsum dolor sit amet
