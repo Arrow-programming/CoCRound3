@@ -56,6 +56,7 @@
     <script src="ui.js"></script>
     <script src="audio.js"></script>
     <script src="pixelart.js"></script>
+    <script src="setFastInterval.js"></script>
     <!--Having a script type of 'module' allows me to modify the document with the script tag. A blank type or module type permits the use of ES6 JS. It should be noted that the same goal can be reached by wrapping a script with a blank type in (() => {})(); which is an unnamed IIFE. -->
     <script>
 (function Application() {
@@ -227,7 +228,7 @@
      * @param {number} screenY - Client Y coordinate from mouse event.
      * @returns {{x:number,y:number}} Coordinates in canvas space.
      */
-    
+
     function screenToWorld(screenX, screenY) {
         //get canvas position and dimensions
         const rect = canvas.getBoundingClientRect();
@@ -247,6 +248,7 @@
         const App = function(config) {
             //self represent
             this.app = App;
+
 
 
             /**
@@ -695,15 +697,17 @@
                  */
                 constructor(cols1 = 6, rows1 = 12, cols2 = 6, rows2 = 6, boardX = 20, boardY = 120, tileSize = 85) {
                     this.cols1 = cols1;
-                    this.rows1 = rows1; 
-                    this.cols2 = cols2; 
-                    this.rows2 = rows2; 
+                    this.rows1 = rows1;
+                    this.cols2 = cols2;
+                    this.rows2 = rows2;
                     this.cols = this.cols1 + this.cols2;
                     this.rows = this.rows1;
                     this.boardX = boardX;
                     this.boardY = boardY;
                     this.tileSize = tileSize;
-                    this.tiles = Array.from({ length: this.rows1 }).map(e => []);
+                    this.tiles = Array.from({
+                        length: this.rows1
+                    }).map(e => []);
                     this.pool = new TilePool(this.tileSize, 12, 12, this);
                     this.selectedTile = null;
                     this.draggedTile = null;
@@ -930,7 +934,7 @@
                             length: this.rows
                         }, () => Array(this.cols1).fill(false))
                     );
-                    
+
                     this.iterate((r, c) => {
                         const start = this.tiles[r][c];
                         if (!start || visited[r][c]) return;
@@ -948,8 +952,7 @@
                             component.push(t);
 
                             //check four neighbors for bidirectional (fun word lol) indicator connection
-                            const neighbors = [
-                                {
+                            const neighbors = [{
                                     rr: tr - 1,
                                     cc: tc,
                                     side: 'up',
@@ -995,7 +998,7 @@
                             for (const tile of toAdd) matched.push(tile);
                         }
                     });
-                    
+
                     return matched;
                 }
 
@@ -1018,6 +1021,10 @@
                         tile.inPool = false;
                         tile.isMoving = false;
                     });
+
+                    if (window.App && matched.length >= 3) {
+                        window.App.addShake(matched.length * 0.8);
+                    }
 
                     //track next slot per owner separately so tiles don't stack
                     const ownerSlots = new Map();
@@ -1293,6 +1300,7 @@
                                     tile2: t2
                                 };
                                 this.reverseSwap(t1, t2);
+                                if (window.App) window.App.addShake(2.5);
                             }
                         } else if (this.justReversed) {
                             //finished reversing an invalid swap clear flags
@@ -1364,7 +1372,7 @@
                         if (tile && tile != this.draggedTile) {
                             tile.draw(this.tileSize, false);
                         }
-                    });                    
+                    });
 
                     // draw dragged tile   
                     if (this.draggedTile) this.draggedTile.draw(this.tileSize, true);
@@ -1526,7 +1534,7 @@
              * but enforces placement rules (starting tile, side-indicator alignment).
              */
             class GridController {
-                
+
                 /**
                  * Create a GridController.
                  * @param {number} x - Left edge of the grid in canvas/world coordinates.
@@ -1542,14 +1550,14 @@
                     this.dh = displayH;
                     this.cellSize = cellSize;
                     this.tiles = [];
-                    
+
                     //tile dragging in grid 
                     this.draggedTile = null;
                     this.draggedOrigCol = null;
                     this.draggedOrigRow = null;
                     this.dragOffsetX = 0;
                     this.dragOffsetY = 0;
-                    
+
                     //alogirthm check for swapping
                     this.invalidSwap = false;
                     this.invalidSwapTimer = 0;
@@ -1570,7 +1578,7 @@
                     //place it without checks
                     this._placeInternal(startTile, startCol, startRow);
                 }
-                
+
                 /**
                  * Convert world/canvas coordinates to a grid cell address.
                  * Returns null if the point falls outside the grid's positive cell space.
@@ -1589,7 +1597,7 @@
                     }
                     return null;
                 }
-                
+
                 /**
                  * Unconditionally register a tile at the given cell and snap its visual
                  * position to the cell center. Does not validate placement rules.
@@ -1620,8 +1628,16 @@
                     tile.isMoving = false;
                     tile.beingDragged = false;
                     tile.scale = 1;
+
+                    //pop particles when a tile lands in the placement grid
+                    if (window.App && window.App.placeBurst && tile.inGrid) {
+                        window.App.placeBurst.add(
+                            this.x + col * this.cellSize + this.cellSize / 2,
+                            this.y + row * this.cellSize + this.cellSize / 2
+                        );
+                    }
                 }
-                
+
                 /**
                  * Attempt to place a tile from the pool into the grid at the given cell,
                  * running side-indicator validation first via `canPlace`.
@@ -1635,7 +1651,7 @@
                     this._placeInternal(tile, col, row);
                     return true;
                 }
-                
+
                 /**
                  * Return the tile occupying the given cell, or undefined if the cell is empty.
                  * @param {number} col - Column index to look up.
@@ -1645,7 +1661,7 @@
                 getTile(col, row) {
                     return this.tiles.find(e => e.col == col && e.row == row)?.tile;
                 }
-                
+
                 /**
                  * Validate whether a tile may be placed at the given cell.
                  * Rules enforced:
@@ -1662,8 +1678,7 @@
                     if (col < 0 || col >= this.cols || row < 0 || row >= this.rows) return false;
                     if (this.getTile(col, row)) return false;
 
-                    const neighbors = [
-                        {
+                    const neighbors = [{
                             dc: -1,
                             dr: 0,
                             mySide: 'left',
@@ -1696,9 +1711,9 @@
                         if (nc < 0 || nr < 0) continue;
                         const neighbor = this.getTile(nc, nr);
                         if (!neighbor) continue;
-                        numNeighbors ++;
+                        numNeighbors++;
                         if (
-                            (tile.sides?.[n.mySide] && neighbor.sides?.[n.theirSide]) || 
+                            (tile.sides?.[n.mySide] && neighbor.sides?.[n.theirSide]) ||
                             (!tile.sides?.[n.mySide] && !neighbor.sides?.[n.theirSide])
                         ) {
                             continue;
@@ -1708,7 +1723,7 @@
 
                     return numNeighbors > 0;
                 }
-                
+
                 /**
                  * Remove the tile entry at the given cell from the internal tiles array.
                  * Does not animate or return the tile — callers are responsible for
@@ -1721,8 +1736,8 @@
                     const idx = this.tiles.findIndex(e => e.col === col && e.row === row);
                     if (idx >= 0) this.tiles.splice(idx, 1);
                 }
-                
-                 /**
+
+                /**
                  * Process pointer input each frame to support dragging tiles within the grid.
                  * On press: lifts the tile under the pointer out of the grid.
                  * On hold: follows the pointer.
@@ -1733,12 +1748,20 @@
                  */
                 handleInput() {
                     //for simplicity. Don't have to keep finding the mouse object
-                    const { screenX, screenY, down, wasDown } = mouse;
+                    const {
+                        screenX,
+                        screenY,
+                        down,
+                        wasDown
+                    } = mouse;
                     const clickHappened = down && !wasDown;
                     const released = !down && wasDown;
 
                     if (clickHappened && !this.draggedTile) {
-                        const { x: wx, y: wy } = screenToWorld(screenX, screenY);
+                        const {
+                            x: wx,
+                            y: wy
+                        } = screenToWorld(screenX, screenY);
                         const cell = this.getCellAtPos(wx, wy);
                         if (cell) {
                             const tile = this.getTile(cell.col, cell.row);
@@ -1754,14 +1777,15 @@
                                 tile.scale = 1.2;
                             }
                         }
-                    } 
-                    else if (this.draggedTile && down) {
-                        const { x: wx, y: wy } = screenToWorld(screenX, screenY);
+                    } else if (this.draggedTile && down) {
+                        const {
+                            x: wx,
+                            y: wy
+                        } = screenToWorld(screenX, screenY);
                         this.draggedTile.x = wx - this.dragOffsetX;
                         this.draggedTile.y = wy - this.dragOffsetY;
 
-                    } 
-                    else if (released && this.draggedTile) {
+                    } else if (released && this.draggedTile) {
                         const tile = this.draggedTile;
                         tile.beingDragged = false;
                         tile.scale = 1;
@@ -1782,25 +1806,24 @@
                                 //temporarily remove existing so canPlace sees clean neighbors
                                 this.remove(dropCell.col, dropCell.row);
 
-                                const tileCanGo     = this.canPlace(tile,     dropCell.col, dropCell.row);
-                                const existingCanGo = this.canPlace(existing, origCol,      origRow);
+                                const tileCanGo = this.canPlace(tile, dropCell.col, dropCell.row);
+                                const existingCanGo = this.canPlace(existing, origCol, origRow);
 
                                 if (tileCanGo && existingCanGo) {
                                     //valid swap commit both moves
-                                    this._placeInternal(existing, origCol,      origRow);
-                                    this._placeInternal(tile,     dropCell.col, dropCell.row);
+                                    this._placeInternal(existing, origCol, origRow);
+                                    this._placeInternal(tile, dropCell.col, dropCell.row);
                                     placed = true;
-                                }
-                                else {
+                                } else {
                                     //invalid swap put existing back in place, then snap tile home
                                     this._placeInternal(existing, dropCell.col, dropCell.row);
                                 }
-                            } 
-                            else {
+                            } else {
                                 //empty cell case validate before placing
                                 if (this.canPlace(tile, dropCell.col, dropCell.row)) {
                                     this._placeInternal(tile, dropCell.col, dropCell.row);
                                     placed = true;
+                                    if (window.App) window.App.addShake(0.8);
                                 }
                             }
                         }
@@ -1823,7 +1846,7 @@
                     for (const entry of this.tiles)
                         if (entry.tile) entry.tile.animate(dt);
                 }
-                
+
                 /**
                  * Render the grid background, cell lines, all placed tiles, the in-flight
                  * dragged tile (drawn last so it appears on top), and the invalid-swap
@@ -1835,7 +1858,7 @@
                     ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
                     ctx.fillRect(this.x - 5, this.y - 5, this.dw + 10, this.dh + 10);
                     ctx.strokeStyle = 'rgba(18, 18, 18, 0.6)';
-                    
+
                     for (let x = this.x; x <= this.x + this.dw; x += this.cellSize) {
                         ctx.beginPath();
                         ctx.moveTo(x, this.y);
@@ -1851,13 +1874,13 @@
                     for (const entry of this.tiles) {
                         if (entry && entry.tile) entry.tile.draw(this.cellSize, false);
                     }
-                    
+
                     //draw the tile being dragged above everything else
                     if (this.draggedTile) this.draggedTile.draw(this.cellSize, true);
                     ctx.restore();
                 }
             }
-            
+
             //layout junk
             const GAP = 50;
             const TS = Math.floor(Math.min(width, height) / 12);
@@ -1884,8 +1907,374 @@
             //trigger a one-time cascade check on the board so seam matches get cleared at startup(?)
             this.tileBoard.swapInProgress = true;
 
+            //shake states
+            this.shake = {
+                x: 0,
+                y: 0
+            };
+            this.shakes = [];
+
+            //particle systems
+            this.matchBurst = new ParticleSystem({
+                add: function(x, y, color) {
+                    for (let i = 0; i < 8; i++) {
+                        const angle = (Math.PI * 2 * i) / 8 + Math.random() * 0.4;
+                        const speed = 80 + Math.random() * 120;
+                        this.particles.push(particlePool.get({
+                            position: {
+                                x,
+                                y
+                            },
+                            velocity: {
+                                x: Math.cos(angle) * speed / 10,
+                                y: Math.sin(angle) * speed / 10
+                            },
+                            size: 4 + Math.random() * 5,
+
+                            //hex to annoy xyzyyxx
+                            color: color || "#45B7D1",
+                            life: 80 + Math.random() * 40,
+                            acceleration: {
+                                x: 0,
+                                y: 2
+                            },
+                            angle: Math.random() * 360,
+                            rotation: (Math.random() - 0.5) * 400,
+                            clear: true,
+                            opacity: 1
+                        }));
+                    }
+                }
+            });
+
+            this.placeBurst = new ParticleSystem({
+                add: function(x, y) {
+                    for (let i = 0; i < 5; i++) {
+                        const angle = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI;
+                        const speed = 40 + Math.random() * 80;
+                        this.particles.push(particlePool.get({
+                            position: {
+                                x,
+                                y
+                            },
+                            velocity: {
+                                x: Math.cos(angle) * speed / 10,
+                                y: Math.sin(angle) * speed / 10
+                            },
+                            size: 3 + Math.random() * 4,
+                            color: '#ffe066',
+                            life: 50 + Math.random() * 30,
+                            acceleration: {
+                                x: 0,
+                                y: 3
+                            },
+                            angle: Math.random() * 360,
+                            rotation: (Math.random() - 0.5) * 300,
+                            clear: true,
+                            opacity: 1
+                        }));
+                    }
+                }
+            });
+
             //ref
             window.App = window.App || this;
+        };
+
+        /**
+         * A partical. I was intially going to make them drawn by an offscreen secondary canvas, however they are to few to make this necessary 
+         * 
+         * @constructor
+         * @param {object} config - configuration settings for the particle
+         * @param {object} [config.position={}] - initial x and y coordinates
+         * @param {number} [config.size=10] - diameter or side length
+         * @param {string} [config.color] - fill color or hex code
+         * @param {object} [config.velocity={}] - change in position per second
+         * @param {number} [config.life=100] - duration until the particle expires
+         * @param {object} [config.acceleration={}] - change in velocity per second
+         * @param {number} [config.angle=0] - starting rotation in degrees
+         * @param {number} [config.rotation=0] - rotational speed in degrees per second
+         * @param {number} [config.opacity=1] - starting transparency level
+         * @param {boolean} [config.clear=false] - whether to fade opacity over lifetime
+         * @param {boolean} [config.collide=false] - whether physics collisions are enabled
+         * @param {CanvasRenderingContext2D} [config.drawingMethod] - the canvas context used for rendering
+         */
+        function Particle(config) {
+            this.position = config.position || Object;
+            this.size = config.size || 10;
+            this.color = config.color;
+            this.velocity = config.velocity || Object;
+            this.life = config.life || 100;
+            this.acceleration = config.acceleration || Object;
+            this.angle = config.angle || 0;
+            this.rotation = config.rotation || 0;
+            this.opacity = config.opacity || 1;
+            this.clear = config.clear || false;
+            this.collide = config.collide || false;
+
+            //this.dT = deltaTime;
+            this.initialLife = config.life;
+            this.drawingMethod = config.drawingMethod || ctx;
+        };
+
+        /* Update a particle */
+        Particle.prototype.update = function(DT) {
+            this.velocity.x += this.acceleration.x * DT;
+            this.velocity.y += this.acceleration.y * DT;
+
+            this.position.x += this.velocity.x * DT;
+            this.position.y += this.velocity.y * DT;
+
+            this.angle += this.rotation * DT;
+
+            if (this.clear !== false) {
+                this.opacity = Math.max(0, this.life / this.initialLife);
+            } else {
+                this.opacity = 1;
+            }
+
+            this.life -= 60 * DT;
+        };
+
+        /* Draw a particle */
+        Particle.prototype.draw = function() {
+            this.drawingMethod.save();
+            this.drawingMethod.translate(this.position.x + this.size / 2, this.position.y + this.size / 2);
+            this.drawingMethod.rotate(this.angle / 180 * Math.PI);
+            this.drawingMethod.fillStyle = this.color;
+            this.drawingMethod.globalAlpha = this.opacity;
+            this.drawingMethod.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
+            this.drawingMethod.restore();
+        };
+
+        /* What happens when a particle dies? */
+        Particle.prototype.die = function() {
+            return this.life < 0;
+        };
+
+        /* Run the particle */
+        Particle.prototype.run = function(DT) {
+            this.draw();
+            this.update(DT);
+        };
+
+        /* Shallow copy of the particle for pooling */
+        Particle.prototype.deepCopy = function(config) {
+            /* 
+                @Judges - This is really a shallow copy, lol. But deepCopy sounds cooler. This function copies a particle and resets it for future use. This is sometimes marginally faster or broadly faster than creating a brand new one and delting the old one, it depends on the context
+            */
+            this.position = {
+                x: (config.position && config.position.x) || 0,
+                y: (config.position && config.position.y) || 0
+            };
+            this.size = config.size || 10;
+            this.color = config.color || '#fff';
+            this.velocity = {
+                x: (config.velocity && config.velocity.x) || 0,
+                y: (config.velocity && config.velocity.y) || 0
+            };
+            this.life = (config.life !== undefined ? config.life : 100);
+            this.initialLife = this.life;
+
+            this.acceleration = {
+                x: (config.acceleration && config.acceleration.x) || 0,
+                y: (config.acceleration && config.acceleration.y) || 0
+            };
+            this.angle = config.angle || 0;
+            this.rotation = config.rotation || 0;
+            this.opacity = (config.opacity !== undefined ? config.opacity : 1);
+            this.clear = !!config.clear;
+            this.collide = !!config.collide;
+            this._pooledActive = true;
+        };
+
+        /**
+         * manages a collection of reusable particle instances to minimize garbage collection
+         * 
+         * @param {number} [initialSize=400] - number of particles to preallocate in memory
+         */
+        class ParticlePool {
+            /* @Judges - The magic of a particle pool! */
+            constructor(initialSize = 400) {
+                this.pool = [];
+                for (let i = 0; i < initialSize; i++) {
+                    //create a minimal particle instance
+                    const p = new Particle({
+                        position: {
+                            x: 0,
+                            y: 0
+                        },
+                        velocity: {
+                            x: 0,
+                            y: 0
+                        },
+                        size: 1,
+                        color: '#000',
+                        life: 0,
+                        acceleration: {
+                            x: 0,
+                            y: 0
+                        }
+                    });
+                    p._pooledActive = false;
+                    this.pool.push(p);
+                }
+            }
+
+            //acquire a particle and initialize it with config
+            get(config) {
+                const p = this.pool.length ? this.pool.pop() : new Particle({
+                    position: {
+                        x: 0,
+                        y: 0
+                    },
+                    velocity: {
+                        x: 0,
+                        y: 0
+                    },
+                    size: 1,
+                    color: '#000',
+                    life: 0,
+                    acceleration: {
+                        x: 0,
+                        y: 0
+                    }
+                });
+                p.deepCopy(config);
+                return p;
+            }
+
+            //release a particle back to the pool
+            release(p) {
+                //minimal reset to avoid keeping large nested references
+                p._pooledActive = false;
+                p.life = 0;
+                //zero velocities so reused state is clean
+                if (p.position) {
+                    p.position.x = 0;
+                    p.position.y = 0;
+                }
+                if (p.velocity) {
+                    p.velocity.x = 0;
+                    p.velocity.y = 0;
+                }
+                //push back into pool (no capacity limit here)
+                this.pool.push(p);
+            }
+        }
+        const particlePool = new ParticlePool(400);
+
+        /**
+         * coordinates the creation, updating, and pooled recycling of multiple particles
+         * 
+         * @param {object} config - system configuration settings
+         * @param {function} [config.add] - function defined to handle particle creation logic
+         */
+        function ParticleSystem(config) {
+            this.add = config.add || function() {};
+            //particles that clear when a level loads
+            this.particles = [];
+
+            //paricles that don't clear
+            this.foreverParticles = [];
+
+        };
+
+        /* Add a particle */
+        ParticleSystem.prototype.addParticle = function() {
+            this.add();
+        };
+        ParticleSystem.prototype.col = function() {};
+
+        /* Run a particle system. Fetch from pool, etc */
+        ParticleSystem.prototype.run = function(DT) {
+            //scrap object if particles not being added
+            if (!this.add) {
+                this.addParticle();
+            }
+
+            //update normal particles (swap-pop removal)
+            for (let i = this.particles.length - 1; i >= 0; i--) {
+                const p = this.particles[i];
+                p.run(DT);
+                if (p.die()) {
+                    //release to pool
+                    particlePool.release(p);
+                    //remove in O(1) by replacing with last element
+                    const last = this.particles.pop();
+                    if (i < this.particles.length) {
+                        this.particles[i] = last;
+                    }
+                }
+            }
+
+            //update foreverParticles (same pattern)
+            for (let i = this.foreverParticles.length - 1; i >= 0; i--) {
+                const p = this.foreverParticles[i];
+                p.run(DT);
+
+                if (p.collide) {
+                    //
+                }
+                if (p.die()) {
+                    particlePool.release(p);
+                    const last = this.foreverParticles.pop();
+                    if (i < this.foreverParticles.length) {
+                        this.foreverParticles[i] = last;
+                    }
+                }
+            }
+
+        };
+
+        /**
+         * creates a screen shake effect that diminishes over time
+         * 
+         * @param {number} n - the initial intensity or power of the shake
+         * @param {object} app - the application state
+         */
+        function Shake(n, app) {
+            this.app = app;
+            //shake power
+            this.n = n;
+        };
+        Shake.prototype.active = function(increment) {
+            /* @Judges - Note the turret bullets on impact produce a subtle screen shake */
+            //apply shake
+            this.app.shake.x = (Math.random() * 2 - 1) * this.n;
+            this.app.shake.y = (Math.random() * 2 - 1) * this.n;
+
+            //fade the shake
+            this.n -= 0.5;
+
+            if (this.n < 0) {
+                this.app.shake.x = 0;
+                this.app.shake.y = 0;
+                this.app.shakes.splice(increment, 1);
+            }
+        };
+
+        /**
+         * adds a subtle screen shake using the existing Shake system
+         * @param {number} [power=1] - shake strength in pixels
+         */
+        App.prototype.addShake = function(power = 1) {
+            /* @Judges - This consolidates the shake constructor into a reusable function. It uses some fun syntax as well! */
+            power = Number(power);
+            if (!isFinite(power) || power <= 0) return;
+            if (!this.shakes) this.shakes = [];
+
+            //merge into last shake to avoid spam
+            const last = this.shakes.length ? this.shakes[this.shakes.length - 1] : null;
+            if (last && typeof last.n === "number") {
+                last.n = Math.max(last.n, power);
+                return;
+            }
+            //cap shake list length
+            if (this.shakes.length > 6) {
+                this.shakes.length = 6;
+            }
+            this.shakes.push(new Shake(power, this));
         };
 
         /* Run the game */
@@ -1893,21 +2282,34 @@
             ctx.fillStyle = "rgb(250, 250, 225)";
             ctx.fillRect(0, 0, width, height);
 
-            const b = this.tileBoard;
+            //update shakes
+            for (let i = this.shakes.length - 1; i >= 0; i--) {
+                this.shakes[i].active(i);
+            }
 
+            //apply shake offset
+            ctx.save();
+            ctx.translate(Math.round(this.shake.x), Math.round(this.shake.y));
+
+            const b = this.tileBoard;
             if (b) {
                 b.update(dt);
                 b.pool.update(dt);
                 b.handleInput();
                 b.pool.handleInput();
             }
-
             if (this.rightGrid) {
                 this.rightGrid.update(dt);
                 this.rightGrid.handleInput();
                 this.rightGrid.draw();
             }
             if (b) b.draw();
+
+            //run particles (drawn on top, inside shake offset so they follow the camera)
+            this.matchBurst.run(dt);
+            this.placeBurst.run(dt);
+
+            ctx.restore();
         };
 
         /* Run the scenes */
@@ -2083,7 +2485,7 @@
      * @param {DOMHighResTimeStamp|number} timestamp
      * @returns {void}
      */
-    
+
     const render = (timestamp) => {
         try {
             //prefer the rAF timestamp when present
@@ -2133,7 +2535,7 @@
             console.error("Main loop error\n" + e.stack);
         }
     };
-    
+
     //Replace interval with rAF
     let rafId = null;
     let running = true;

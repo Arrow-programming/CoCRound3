@@ -287,7 +287,10 @@ const PixelArt = (() => {
                 const p = PAL[row[x]];
                 if (!p) continue;
                 const i = (y * W + x) * 4;
-                d[i]=p[0]; d[i+1]=p[1]; d[i+2]=p[2]; d[i+3]=p[3];
+                d[i]=p[0]; 
+                d[i+1]=p[1]; 
+                d[i+2]=p[2]; 
+                d[i+3]=p[3];
             }
         }
         ox.putImageData(img, 0, 0);
