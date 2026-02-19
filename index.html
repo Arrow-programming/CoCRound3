@@ -55,6 +55,7 @@
     <script src="graphicHelpers.js"></script>
     <script src="ui.js"></script>
     <script src="audio.js"></script>
+    <script src="pixelart.js"></script>
     <!--Having a script type of 'module' allows me to modify the document with the script tag. A blank type or module type permits the use of ES6 JS. It should be noted that the same goal can be reached by wrapping a script with a blank type in (() => {})(); which is an unnamed IIFE. -->
     <script>
 (function Application() {
@@ -365,55 +366,67 @@
                  * @param {boolean} [isDragging=false] - Whether the tile is currently being dragged (affects styling).
                  * @returns {void}
                  */
+                // draw(tileSize, isDragging = false) {
+                //     ctx.globalAlpha = this.opacity;
+                //     ctx.save();
+                //     ctx.translate(this.x, this.y);
+                //     ctx.scale(this.scale, this.scale);
+                //     ctx.rotate(this.rotation);
+
+                //     const cornerRadius = 8;
+                //     const bgSize = tileSize * 0.48;
+                //     const fillColor = tileColors[this.colorIndex % tileColors.length];
+
+                //     //background rounded rect
+                //     ctx.fillStyle = fillColor;
+                //     ctx.beginPath();
+                //     ctx.moveTo(-bgSize + cornerRadius, -bgSize);
+                //     ctx.lineTo(bgSize - cornerRadius, -bgSize);
+                //     ctx.quadraticCurveTo(bgSize, -bgSize, bgSize, -bgSize + cornerRadius);
+                //     ctx.lineTo(bgSize, bgSize - cornerRadius);
+                //     ctx.quadraticCurveTo(bgSize, bgSize, bgSize - cornerRadius, bgSize);
+                //     ctx.lineTo(-bgSize + cornerRadius, bgSize);
+                //     ctx.quadraticCurveTo(-bgSize, bgSize, -bgSize, bgSize - cornerRadius);
+                //     ctx.lineTo(-bgSize, -bgSize + cornerRadius);
+                //     ctx.quadraticCurveTo(-bgSize, -bgSize, -bgSize + cornerRadius, -bgSize);
+                //     ctx.closePath();
+                //     ctx.fill();
+
+                //     ctx.strokeStyle = isDragging ? "rgba(255,255,180,0.9)" : "rgba(255,255,255,0.6)";
+                //     ctx.lineWidth = isDragging ? 3 : 2;
+                //     ctx.stroke();
+
+                //     //draw small red indicators on sides
+                //     ctx.fillStyle = "#D9534F";
+                //     const indLen = tileSize * 0.22;
+                //     const indW = Math.max(3, Math.round(tileSize * 0.06));
+                //     if (this.sides.up) {
+                //         ctx.fillRect(-indLen / 2, -bgSize + 6, indLen, indW);
+                //     }
+                //     if (this.sides.down) {
+                //         ctx.fillRect(-indLen / 2, bgSize - 6 - indW, indLen, indW);
+                //     }
+                //     if (this.sides.left) {
+                //         ctx.fillRect(-bgSize + 6, -indLen / 2, indW, indLen);
+                //     }
+                //     if (this.sides.right) {
+                //         ctx.fillRect(bgSize - 6 - indW, -indLen / 2, indW, indLen);
+                //     }
+
+                //     ctx.restore();
+                //     ctx.globalAlpha = 1;
+                // }
                 draw(tileSize, isDragging = false) {
-                    ctx.globalAlpha = this.opacity;
-                    ctx.save();
-                    ctx.translate(this.x, this.y);
-                    ctx.scale(this.scale, this.scale);
-                    ctx.rotate(this.rotation);
-
-                    const cornerRadius = 8;
-                    const bgSize = tileSize * 0.48;
-                    const fillColor = tileColors[this.colorIndex % tileColors.length];
-
-                    //background rounded rect
-                    ctx.fillStyle = fillColor;
-                    ctx.beginPath();
-                    ctx.moveTo(-bgSize + cornerRadius, -bgSize);
-                    ctx.lineTo(bgSize - cornerRadius, -bgSize);
-                    ctx.quadraticCurveTo(bgSize, -bgSize, bgSize, -bgSize + cornerRadius);
-                    ctx.lineTo(bgSize, bgSize - cornerRadius);
-                    ctx.quadraticCurveTo(bgSize, bgSize, bgSize - cornerRadius, bgSize);
-                    ctx.lineTo(-bgSize + cornerRadius, bgSize);
-                    ctx.quadraticCurveTo(-bgSize, bgSize, -bgSize, bgSize - cornerRadius);
-                    ctx.lineTo(-bgSize, -bgSize + cornerRadius);
-                    ctx.quadraticCurveTo(-bgSize, -bgSize, -bgSize + cornerRadius, -bgSize);
-                    ctx.closePath();
-                    ctx.fill();
-
-                    ctx.strokeStyle = isDragging ? "rgba(255,255,180,0.9)" : "rgba(255,255,255,0.6)";
-                    ctx.lineWidth = isDragging ? 3 : 2;
-                    ctx.stroke();
-
-                    //draw small red indicators on sides
-                    ctx.fillStyle = "#D9534F";
-                    const indLen = tileSize * 0.22;
-                    const indW = Math.max(3, Math.round(tileSize * 0.06));
-                    if (this.sides.up) {
-                        ctx.fillRect(-indLen / 2, -bgSize + 6, indLen, indW);
-                    }
-                    if (this.sides.down) {
-                        ctx.fillRect(-indLen / 2, bgSize - 6 - indW, indLen, indW);
-                    }
-                    if (this.sides.left) {
-                        ctx.fillRect(-bgSize + 6, -indLen / 2, indW, indLen);
-                    }
-                    if (this.sides.right) {
-                        ctx.fillRect(bgSize - 6 - indW, -indLen / 2, indW, indLen);
-                    }
-
-                    ctx.restore();
-                    ctx.globalAlpha = 1;
+                    PixelArt.draw(
+                        ctx,
+                        this.colorIndex,
+                        this.sides,
+                        this.x, this.y,
+                        tileSize,
+                        this.opacity,
+                        this.scale,
+                        isDragging
+                    );
                 }
             }
 
