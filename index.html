@@ -1548,6 +1548,8 @@
                     this.y = y;
                     this.dw = displayW;
                     this.dh = displayH;
+                    this.panX = 0;
+                    this.panY = 0;
                     this.cellSize = cellSize;
                     this.tiles = [];
 
@@ -1575,6 +1577,12 @@
                         down: true
                     };
 
+                    // offscreen canvas
+                    this.offCanvas = document.createElement("canvas");
+                    this.offCanvas.width = this.dw;
+                    this.offCanvas.height = this.dh;
+                    this.offCtx = this.offCanvas.getContext("2d");
+
                     //place it without checks
                     this._placeInternal(startTile, startCol, startRow);
                 }
@@ -1587,14 +1595,12 @@
                  * @returns {{col: number, row: number}|null} The cell under the point, or null.
                  */
                 getCellAtPos(wx, wy) {
-                    const col = Math.floor((wx - this.x) / this.cellSize);
-                    const row = Math.floor((wy - this.y) / this.cellSize);
-                    if (col >= 0 && row >= 0) {
-                        return {
-                            col,
-                            row
-                        };
-                    }
+                    const col = Math.floor((wx - this.x + this.panX) / this.cellSize);
+                    const row = Math.floor((wy - this.y + this.panY) / this.cellSize);
+                    return {
+                        col,
+                        row
+                    };
                     return null;
                 }
 
@@ -1675,10 +1681,10 @@
                  * @returns {boolean} True if placement is legal, false otherwise.
                  */
                 canPlace(tile, col, row) {
-                    if (col < 0 || col >= this.cols || row < 0 || row >= this.rows) return false;
                     if (this.getTile(col, row)) return false;
 
-                    const neighbors = [{
+                    const neighbors = [
+                        {
                             dc: -1,
                             dr: 0,
                             mySide: 'left',
@@ -1708,7 +1714,6 @@
                     for (const n of neighbors) {
                         const nc = col + n.dc;
                         const nr = row + n.dr;
-                        if (nc < 0 || nr < 0) continue;
                         const neighbor = this.getTile(nc, nr);
                         if (!neighbor) continue;
                         numNeighbors++;
@@ -1848,35 +1853,90 @@
                 }
 
                 /**
+                 * Pan the grid, based on keys. TODO: use mouse.
+                 * @returns {void}
+                 */
+                pan() {
+                    const step = this.cellSize / 10;
+                    if (keys[65]) { // A
+                        this.panX -= step;
+                    }
+                    if (keys[68]) { // D
+                        this.panX += step;
+                    }
+                    if (keys[83]) { // S
+                        this.panY += step;
+                    }
+                    if (keys[87]) { // W
+                        this.panY -= step;
+                    }
+                }
+
+                /**
                  * Render the grid background, cell lines, all placed tiles, the in-flight
                  * dragged tile (drawn last so it appears on top), and the invalid-swap
                  * flash overlay if active.
                  * @returns {void}
                  */
                 draw() {
+                    // offscreen canvas
+                    const octx = this.offCtx;
+                    octx.clearRect(0, 0, this.dw, this.dh);
+
                     ctx.save();
                     ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
                     ctx.fillRect(this.x - 5, this.y - 5, this.dw + 10, this.dh + 10);
-                    ctx.strokeStyle = 'rgba(18, 18, 18, 0.6)';
-
-                    for (let x = this.x; x <= this.x + this.dw; x += this.cellSize) {
-                        ctx.beginPath();
-                        ctx.moveTo(x, this.y);
-                        ctx.lineTo(x, this.y + this.dh);
-                        ctx.stroke();
+                    
+                    octx.strokeStyle = 'rgba(18, 18, 18, 0.6)';
+                    // a little bit of math to find where to put the first line
+                    const startingX = -this.panX + Math.ceil(this.panX / this.cellSize) * this.cellSize;
+                    for (let x = startingX; x <= this.dw; x += this.cellSize) {
+                        octx.beginPath();
+                        octx.moveTo(x, 0);
+                        octx.lineTo(x, this.dh);
+                        octx.stroke();
                     }
-                    for (let y = this.y; y <= this.y + this.dh; y += this.cellSize) {
-                        ctx.beginPath();
-                        ctx.moveTo(this.x, y);
-                        ctx.lineTo(this.x + this.dw, y);
-                        ctx.stroke();
+                    const startingY = -this.panY + Math.ceil(this.panY / this.cellSize) * this.cellSize;
+                    for (let y = startingY; y <= this.dh; y += this.cellSize) {
+                        octx.beginPath();
+                        octx.moveTo(0, y);
+                        octx.lineTo(this.dw, y);
+                        octx.stroke();
                     }
                     for (const entry of this.tiles) {
-                        if (entry && entry.tile) entry.tile.draw(this.cellSize, false);
+                        if (entry && entry.tile) {
+                            const et = entry.tile;
+                            // The .5 is necessary because the draw call draws it relative to center
+                            PixelArt.draw(
+                                octx,
+                                et.colorIndex,
+                                et.sides,
+                                (entry.col + 0.5) * this.cellSize - this.panX,
+                                (entry.row + 0.5) * this.cellSize - this.panY,
+                                this.cellSize,
+                                et.opacity,
+                                et.scale,
+                                false
+                            );
+                        }
                     }
 
                     //draw the tile being dragged above everything else
-                    if (this.draggedTile) this.draggedTile.draw(this.cellSize, true);
+                    if (this.draggedTile) {
+                        const drt = this.draggedTile;
+                        PixelArt.draw(
+                            ctx,
+                            drt.colorIndex,
+                            drt.sides,
+                            drt.x * this.cellSize, drt.y * this.cellSize,
+                            this.cellSize,
+                            drt.opacity,
+                            drt.scale,
+                            true
+                        );
+                    }
+
+                    ctx.drawImage(this.offCanvas, this.x, this.y);
                     ctx.restore();
                 }
             }
@@ -2301,6 +2361,7 @@
             if (this.rightGrid) {
                 this.rightGrid.update(dt);
                 this.rightGrid.handleInput();
+                this.rightGrid.pan();
                 this.rightGrid.draw();
             }
             if (b) b.draw();
