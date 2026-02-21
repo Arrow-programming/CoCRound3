@@ -63,7 +63,8 @@ Make the button that moves back to most recently placed tile
     <!--Having a script type of 'module' allows me to modify the document with the script tag. A blank type or module type permits the use of ES6 JS. It should be noted that the same goal can be reached by wrapping a script with a blank type in (() => {})(); which is an unnamed IIFE. -->
     <script>
 (function Application() {
-    const tileColors = ["#D1A593", "#45B7D1", "#6BCB77"];
+    const pixelArtColors = ["#D1A593", "#6BCB77", "#45B7D1"];
+    
 
     class Intro {
         constructor() {
@@ -358,10 +359,10 @@ Make the button that moves back to most recently placed tile
                         if (this.scale < 1.01) this.scale = 1;
                     }
 
-                    if (this.matched) {
-                        this.scale *= 0.95;
-                        this.opacity *= 0.9;
-                    }
+                    // if (this.matched) {
+                    //     this.scale *= 0.95;
+                    //     this.opacity *= 0.9;
+                    // }
                 }
 
                 /**
@@ -447,10 +448,10 @@ Make the button that moves back to most recently placed tile
                  * @param {Object} [parent=null] - Reference to parent TileBoard for board coordinates and right grid.
                  */
                 constructor(tileSize, left = 10, top = 10, parent = null) {
-                    this.tileSize = tileSize;
+                    this.tileSize = tileSize; 
                     this.left = left;
                     this.top = top;
-                    this.padding = 8;
+                    this.padding = 22;
                     this.spacing = 10;
                     this.tiles = [];
                     this.selectedTile = null;
@@ -488,18 +489,27 @@ Make the button that moves back to most recently placed tile
                     tile.poolIndex = slot;
                     tile.inPool = true;
                     tile.toBePooled = false;
-                    tile.isMoving = false;
                     tile.beingDragged = false;
                     tile.matched = false;
                     tile.scale = 1;
-                    tile.opacity = 1;
+                    tile.opacity = 1; 
                     tile.rotation = 0;
 
                     const t = this.getTarget(slot);
-                    tile.x = t.x;
-                    tile.y = t.y;
                     tile.targetX = t.x;
                     tile.targetY = t.y;
+
+                    
+                    const dx = Math.abs(tile.x - t.x);
+                    const dy = Math.abs(tile.y - t.y);
+                    if (dx > 1 || dy > 1) {
+                        tile.isMoving = true; 
+                    } else {
+                        tile.x = t.x;
+                        tile.y = t.y;
+                        tile.isMoving = false;
+                    }
+
                     this.tiles.push(tile);
                 }
 
@@ -715,7 +725,9 @@ Make the button that moves back to most recently placed tile
                     this.tiles = Array.from({
                         length: this.rows1
                     }).map(e => []);
-                    this.pool = new TilePool(this.tileSize, 12, 12, this);
+
+                    //tileSize, left = 10, top = 10, parent = null
+                    this.pool = new TilePool(this.tileSize, 24, 12, this);
                     this.selectedTile = null;
                     this.draggedTile = null;
                     this.draggedTileOriginal = null;
@@ -761,7 +773,7 @@ Make the button that moves back to most recently placed tile
                     let attempts = 0;
                     do {
                         this.iterate((row, col) => {
-                            const colorIndex = Math.floor(Math.random() * tileColors.length);
+                            const colorIndex = Math.floor(Math.random() * pixelArtColors.length);
                             const tile = new Tile(col, row, colorIndex);
                             tile.updatePosition(this.tileSize, this.boardX, this.boardY);
                             this.tiles[row][col] = tile;
@@ -783,7 +795,7 @@ Make the button that moves back to most recently placed tile
                         for (let c = 0; c < cols; c++) {
                             callback(r, c);
                         }
-                    }
+                    } 
                 }
 
                 // initial board will be regenerated if any connected matches are present
@@ -1092,7 +1104,7 @@ Make the button that moves back to most recently placed tile
                     for (let col = 0; col < this.cols; col++) {
                         for (let row = 0; row < this.rows; row++) {
                             if (this.tiles[row][col] === null) {
-                                const colorIndex = Math.floor(Math.random() * tileColors.length);
+                                const colorIndex = Math.floor(Math.random() * pixelArtColors.length);
                                 const tile = new Tile(col, row, colorIndex);
                                 tile.y = this.boardY - this.tileSize;
                                 tile.targetY = this.boardY + row * this.tileSize + this.tileSize / 2;
@@ -1377,7 +1389,7 @@ Make the button that moves back to most recently placed tile
                     //draw tiles
                     this.iterate((row, col) => {
                         const tile = this.tiles[row][col];
-                        if (tile && tile != this.draggedTile) {
+                        if (tile && tile != this.draggedTile && !tile.toBePooled) {
                             tile.draw(this.tileSize, false);
                         }
                     });
@@ -1387,19 +1399,23 @@ Make the button that moves back to most recently placed tile
 
                     //draw pool area
                     const poolTop = 6;
-                    const poolHeight = this.tileSize + 18;
+                    const poolHeight = this.tileSize + 8;
                     ctx.save();
-                    ctx.fillStyle = "rgba(224,221,211,255)";
-                    ctx.fillRect(0, poolTop, width, poolHeight);
-                    ctx.globalAlpha = 1;
+                    ctx.fillStyle = "rgba(224, 221, 211, 255)";
+                    ctx.strokeStyle = "rgba(25, 25, 25)"; 
+                    ctx.lineWidth = 4;
+                    ctx.fillRect(10, poolTop, width - 20, poolHeight + 5);
+                    ctx.strokeRect(10, poolTop, width - 20, poolHeight + 5);
+                    ctx.stroke(); 
+                    ctx.globalAlpha = 1; 
                     ctx.restore();
 
                     //draw pooled tiles
-                    for (let i = 0; i < this.pool.tiles.length; i++) {
-                        const tile = this.pool.tiles[i];
-                        //ensure pooled tiles use pool visuals and are drawn above
-                        tile.draw(this.tileSize, false);
-                    }
+                    // for (let i = 0; i < this.pool.tiles.length; i++) {
+                    //     const tile = this.pool.tiles[i];
+                    //     //ensure pooled tiles use pool visuals and are drawn above
+                    //     tile.draw(this.tileSize, false);
+                    // }
 
                     //draw invalid swap feedback
                     if (this.invalidSwap && this.invalidSwapTile) {
@@ -1535,6 +1551,25 @@ Make the button that moves back to most recently placed tile
                         this.draggedTileOriginal = null;
                     }
                 }
+
+                drawPool() {
+                    //draw matched tiles still flying toward the pool (above pool background)
+                    this.iterate((row, col) => {
+                        const t = this.tiles[row][col];
+                        if (t && t.toBePooled) t.draw(this.tileSize, false);
+                    });
+                    //draw settled pool tiles
+                    for (let i = 0; i < this.pool.tiles.length; i++) {
+                        const tile = this.pool.tiles[i];
+                        if (tile !== this.pool.draggedTile) {
+                            tile.draw(this.tileSize, false);
+                        }
+                    }
+                    //dragged pool tile always on top
+                    if (this.pool.draggedTile) {
+                        this.pool.draggedTile.draw(this.tileSize, true);
+                    }
+                }
             }
 
             /**
@@ -1641,16 +1676,29 @@ Make the button that moves back to most recently placed tile
                     tile.x = cx;
                     tile.y = cy;
                     tile.isMoving = false;
-                    tile.beingDragged = false;
+                    tile.beingDragged = false; 
                     tile.scale = 1;
 
                     //pop particles when a tile lands in the placement grid
                     if (window.App && window.App.placeBurst && tile.inGrid) {
-                        window.App.placeBurst.add(
-                            this.x - this.panX + col * this.cellSize + this.cellSize / 2,
-                            this.y - this.panY + row * this.cellSize + this.cellSize / 2
-                        );
-                    }
+                        const color = pixelArtColors[tile.colorIndex];
+                        const cs = this.cellSize;
+                        const bx = this.x - this.panX + col * cs;
+                        const by = this.y - this.panY + row * cs;
+
+                        //from edges
+                        const origins = [
+                            [bx + cs / 2, by],
+                            [bx + cs / 2, by + cs],
+                            [bx, by + cs / 2],
+                            [bx + cs, by + cs / 2],
+                        ];
+                        for (const [ox, oy] of origins) {
+                            window.App.placeBurst.add(ox, oy, color);
+                        }
+                        window.App.addShake(10);
+                    } 
+                    
                 }
 
                 /**
@@ -1948,6 +1996,21 @@ Make the button that moves back to most recently placed tile
                         octx.lineTo(this.dw, y);
                         octx.stroke();
                     }
+
+                    if (window.App && window.App.placeBurst) {
+                        for (const p of window.App.placeBurst.particles) {
+                            const px = p.position.x - this.x;
+                            const py = p.position.y - this.y;
+                            octx.save();
+                            octx.translate(px + p.size / 2, py + p.size / 2);
+                            octx.rotate(p.angle / 180 * Math.PI);
+                            octx.fillStyle = p.color;
+                            octx.globalAlpha = p.opacity;
+                            octx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                            octx.restore();
+                        }
+                    }
+
                     for (const entry of this.tiles) {
                         if (entry && entry.tile) {
                             const et = entry.tile;
@@ -2054,28 +2117,25 @@ Make the button that moves back to most recently placed tile
             });
 
             this.placeBurst = new ParticleSystem({
-                add: function(x, y) {
-                    for (let i = 0; i < 5; i++) {
-                        const angle = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI;
-                        const speed = 40 + Math.random() * 80;
+                add: function(x, y, color) {
+                    for (let i = 0; i < 20; i++) {
+                        const angle = Math.random() * Math.PI * 2;
+                        const speed = 30 + Math.random() * 120;
                         this.particles.push(particlePool.get({
-                            position: {
-                                x,
-                                y
+                            position: { 
+                                x, 
+                                y 
                             },
                             velocity: {
                                 x: Math.cos(angle) * speed / 10,
                                 y: Math.sin(angle) * speed / 10
                             },
-                            size: 3 + Math.random() * 4,
-                            color: '#ffe066',
-                            life: 50 + Math.random() * 30,
-                            acceleration: {
-                                x: 0,
-                                y: 3
-                            },
+                            size: 3 + Math.random() * 6,
+                            color: color || '#ffe066',
+                            life: 50 + Math.random() * 40,
+                            acceleration: { x: 0, y: 2 },
                             angle: Math.random() * 360,
-                            rotation: (Math.random() - 0.5) * 300,
+                            rotation: (Math.random() - 0.5) * 400,
                             clear: true,
                             opacity: 1
                         }));
@@ -2332,6 +2392,18 @@ Make the button that moves back to most recently placed tile
             }
 
         };
+        
+        ParticleSystem.prototype.update = function(DT) {
+            for (let i = this.particles.length - 1; i >= 0; i--) {
+                const p = this.particles[i];
+                p.update(DT);
+                if (p.die()) {
+                    particlePool.release(p);
+                    const last = this.particles.pop();
+                    if (i < this.particles.length) this.particles[i] = last;
+                }
+            }
+        };
 
         /**
          * creates a screen shake effect that diminishes over time
@@ -2345,7 +2417,7 @@ Make the button that moves back to most recently placed tile
             this.n = n;
         };
         Shake.prototype.active = function(increment) {
-            /* @Judges - Note the turret bullets on impact produce a subtle screen shake */
+            
             //apply shake
             this.app.shake.x = (Math.random() * 2 - 1) * this.n;
             this.app.shake.y = (Math.random() * 2 - 1) * this.n;
@@ -2400,7 +2472,7 @@ Make the button that moves back to most recently placed tile
             const b = this.tileBoard;
             if (b) {
                 b.update(dt);
-                b.pool.update(dt);
+                b.pool.update(dt); 
                 b.handleInput();
                 b.pool.handleInput();
                 b.draw();
@@ -2409,6 +2481,15 @@ Make the button that moves back to most recently placed tile
                 this.rightGrid.update(dt);
                 this.rightGrid.pan();
                 this.rightGrid.draw();
+            }
+            
+            //run particles
+            this.matchBurst.run(dt);
+            this.placeBurst.update(dt);
+
+            //pool tiles drawn after grid so they always render on top
+            if (b) {
+                b.drawPool();
             }
 
             // single unified border around everything
@@ -2425,9 +2506,7 @@ Make the button that moves back to most recently placed tile
                 );
                 ctx.restore();
             }
-            //run particles (drawn on top, inside shake offset so they follow the camera)
-            this.matchBurst.run(dt);
-            this.placeBurst.run(dt);
+            
 
             ctx.restore();
         };
