@@ -1,4 +1,8 @@
 <!DOCTYPE html>
+<!--
+TODO:
+Make the button that moves back to most recently placed tile
+-->
 <html> 
     <head>
         <!--Encoding and viewport-->
@@ -23,16 +27,15 @@
         <div id="container">
             <div id="game-wrapper">
                 <canvas id="game">Your browser does not support canvas</canvas>
-                <canvas id='overlay-canvas'></canvas>
             </div>
-            
-            <div id="overlay">
-                <button id="copyButton">Copy Score</button>
-                <div id="fullscreen-container">
-                    <span class='material-icons' id='fullscreen'>fullscreen</span>
-                    <span class='material-icons' id='audio'>volume_up</span>
-                    <span class='material-icons' id='reload'>refresh</span>
-                </div>
+        </div>
+        <div id="overlay">
+            <button id="copyButton">Copy Score</button>
+            <div id="fullscreen-container">
+                <span class='material-icons' id='fullscreen'>fullscreen</span>
+                <span class='material-icons' id='audio'>volume_up</span>
+                <span class='material-icons' id='reload'>refresh</span>
+                <span class='material-icons' id='back'>arrow_back</span>
             </div>
         </div>
         <!--All the stinkn' UI-->
@@ -71,7 +74,6 @@
         }
         run() {
             document.getElementById("interface").style.display = "none";
-            document.getElementById("overlay").style.display = "none";
             ctx.lineJoin = "round";
             this.prog++;
             ctx.fillStyle = "rgba(18, 18, 18, 1)"
@@ -532,9 +534,9 @@
                     for (let i = 0; i < this.tiles.length; i++) {
                         const p = this.tiles[i];
                         p.poolIndex = i;
-                        const t = this.getTarget(i);
-                        p.targetX = t.x;
-                        p.targetY = t.y;
+                        const { x, y } = this.getTarget(i);
+                        p.targetX = x;
+                        p.targetY = y;
                         p.isMoving = true;
                     }
                 }
@@ -674,6 +676,11 @@
                             this.invalidDrop = false;
                             this.invalidDropTile = null;
                             this.invalidDropTime = 0;
+                        }
+                    }
+                    for (const tile of this.tiles) {
+                        if (tile.isMoving) {
+                            tile.animate(dt);
                         }
                     }
                 }
@@ -1534,7 +1541,6 @@
              * but enforces placement rules (starting tile, side-indicator alignment).
              */
             class GridController {
-
                 /**
                  * Create a GridController.
                  * @param {number} x - Left edge of the grid in canvas/world coordinates.
@@ -1548,11 +1554,11 @@
                     this.y = y;
                     this.dw = displayW;
                     this.dh = displayH;
-                    this.panX = 0;
-                    this.panY = 0;
+                    this.panX = -this.dw / 2 + cellSize / 2;
+                    this.panY = -this.dh / 2 + cellSize / 2;
                     this.cellSize = cellSize;
                     this.tiles = [];
-
+                    /*
                     //tile dragging in grid 
                     this.draggedTile = null;
                     this.draggedOrigCol = null;
@@ -1562,7 +1568,7 @@
 
                     //alogirthm check for swapping
                     this.invalidSwap = false;
-                    this.invalidSwapTimer = 0;
+                    this.invalidSwapTimer = 0;*/
 
                     const startCol = 0;
                     const startRow = 0;
@@ -1576,6 +1582,8 @@
                         up: true,
                         down: true
                     };
+
+                    this.panning = false;
 
                     // offscreen canvas
                     this.offCanvas = document.createElement("canvas");
@@ -1638,8 +1646,8 @@
                     //pop particles when a tile lands in the placement grid
                     if (window.App && window.App.placeBurst && tile.inGrid) {
                         window.App.placeBurst.add(
-                            this.x + col * this.cellSize + this.cellSize / 2,
-                            this.y + row * this.cellSize + this.cellSize / 2
+                            this.x - this.panX + col * this.cellSize + this.cellSize / 2,
+                            this.y - this.panY + row * this.cellSize + this.cellSize / 2
                         );
                     }
                 }
@@ -1737,12 +1745,15 @@
                  * @param {number} row - Row of the tile to remove.
                  * @returns {void}
                  */
-                remove(col, row) {
+                remove(col, row) {/*
                     const idx = this.tiles.findIndex(e => e.col === col && e.row === row);
-                    if (idx >= 0) this.tiles.splice(idx, 1);
+                    if (idx >= 0) this.tiles.splice(idx, 1);*/
                 }
 
                 /**
+                 * ARROW. Can you please expain why this exists?
+                 * I thought the tiles on the grid were permanent.
+                 * 
                  * Process pointer input each frame to support dragging tiles within the grid.
                  * On press: lifts the tile under the pointer out of the grid.
                  * On hold: follows the pointer.
@@ -1751,7 +1762,7 @@
                  *   On failure, the tile snaps back to its origin and triggers the invalid flash.
                  * @returns {void}
                  */
-                handleInput() {
+                handleInput() {/*
                     //for simplicity. Don't have to keep finding the mouse object
                     const {
                         screenX,
@@ -1839,7 +1850,7 @@
                             this.invalidSwap = true;
                             this.invalidSwapTimer = 0;
                         }
-                    }
+                    }*/
                 }
 
                 /**
@@ -1853,22 +1864,36 @@
                 }
 
                 /**
-                 * Pan the grid, based on keys. TODO: use mouse.
+                 * Pan the grid to the last placed tile.
+                 * @returns {void}
+                 */
+                panToLastPlaced() {
+                    const { row, col } = this.tiles[this.tiles.length - 1];
+                    this.panX = -this.dw / 2 + this.cellSize * (col + 0.5);
+                    this.panY = -this.dh / 2 + this.cellSize * (row + 0.5);
+                }
+
+                /**
+                 * Pan the grid, based on keys.
                  * @returns {void}
                  */
                 pan() {
-                    const step = this.cellSize / 10;
-                    if (keys[65]) { // A
-                        this.panX -= step;
+                    const { down, screenX, screenY } = mouse;
+                    const { x, y } = screenToWorld(screenX, screenY);
+                    if (!this.panning && mouse.down && !mouse.wasDown &&
+                        x >= this.x && x <= this.x + this.dw &&
+                        y >= this.y && y <= this.y + this.dh
+                    ) {
+                        this.panning = true;
+                        this.panStartX = this.panX + x;
+                        this.panStartY = this.panY + y;
                     }
-                    if (keys[68]) { // D
-                        this.panX += step;
+                    if (this.panning && mouse.down) {
+                        this.panX = this.panStartX - x;
+                        this.panY = this.panStartY - y;
                     }
-                    if (keys[83]) { // S
-                        this.panY += step;
-                    }
-                    if (keys[87]) { // W
-                        this.panY -= step;
+                    if (this.panning && !mouse.down) {
+                        this.panning = false;
                     }
                 }
 
@@ -1920,7 +1945,7 @@
                             );
                         }
                     }
-
+                    /*
                     //draw the tile being dragged above everything else
                     if (this.draggedTile) {
                         const drt = this.draggedTile;
@@ -1934,7 +1959,7 @@
                             drt.scale,
                             true
                         );
-                    }
+                    }*/
 
                     ctx.drawImage(this.offCanvas, this.x, this.y);
                     ctx.restore();
@@ -2360,7 +2385,7 @@
             }
             if (this.rightGrid) {
                 this.rightGrid.update(dt);
-                this.rightGrid.handleInput();
+                //this.rightGrid.handleInput();
                 this.rightGrid.pan();
                 this.rightGrid.draw();
             }
@@ -2739,6 +2764,11 @@
     //Event
     window.addEventListener("resize", function() {
         if (typeof minimap !== "undefined" && minimap.init) minimap.init();
+    });
+
+    // Back to last placed tile
+    document.querySelector("#back").addEventListener("click", e => {
+        window.App.rightGrid.panToLastPlaced();
     });
 
     //intiate...

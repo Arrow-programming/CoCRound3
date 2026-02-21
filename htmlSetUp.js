@@ -14,10 +14,6 @@ let { shampoedNoodlesAndBacon, canvas, ctx, width, height, dprVal, displayScale,
     const canvasContext = theCanvas.getContext("2d", {
         willReadFrequently: false,
     }); 
-    const overCanvas = document.getElementById("overlay-canvas");
-    const overctx = overCanvas.getContext("2d", {
-        willReadFrequently: false,
-    });
 
     let dprVal = window.devicePixelRatio || 1;
 
@@ -106,11 +102,6 @@ let { shampoedNoodlesAndBacon, canvas, ctx, width, height, dprVal, displayScale,
         theCanvas.style.height = canvasDisplayHeight + "px";
         theCanvas.width = Math.round(canvasDisplayWidth * dprVal);
         theCanvas.height = Math.round(canvasDisplayHeight * dprVal);
-    
-        overCanvas.style.width = canvasDisplayWidth + "px";
-        overCanvas.style.height = canvasDisplayHeight + "px";
-        overCanvas.width = Math.round(canvasDisplayWidth * dprVal);
-        overCanvas.height = Math.round(canvasDisplayHeight * dprVal);
     
         //update display scale
         displayScale = Math.min(canvasDisplayWidth / BASE_WIDTH, canvasDisplayHeight / BASE_HEIGHT);
@@ -581,8 +572,6 @@ let { shampoedNoodlesAndBacon, canvas, ctx, width, height, dprVal, displayScale,
     return {
         canvas: theCanvas,
         ctx: canvasContext,
-        overlayCanvas: overCanvas,
-        octx: overctx,
         width,
         height,
         dprVal,
