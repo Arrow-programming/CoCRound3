@@ -1337,7 +1337,7 @@ Make the button that moves back to most recently placed tile
                  */
                 draw() {
                     //draw board background
-                    ctx.fillStyle = "rgba(255, 255, 255)";
+                    ctx.fillStyle = "rgba(224, 221,211,255)";
                     ctx.fillRect(
                         this.boardX - 5,
                         this.boardY - 5,
@@ -1351,6 +1351,7 @@ Make the button that moves back to most recently placed tile
                         this.rows2 * this.tileSize + 10
                     );
 
+                    
                     //draw grid lines
                     //ctx.strokeStyle = "rgba(10, 10, 150, 0.3)";
                     //ctx.lineWidth = 1;
@@ -1388,7 +1389,7 @@ Make the button that moves back to most recently placed tile
                     const poolTop = 6;
                     const poolHeight = this.tileSize + 18;
                     ctx.save();
-                    ctx.fillStyle = "rgba(255, 255, 160, 0.8)";
+                    ctx.fillStyle = "rgba(224,221,211,255)";
                     ctx.fillRect(0, poolTop, width, poolHeight);
                     ctx.globalAlpha = 1;
                     ctx.restore();
@@ -1907,11 +1908,30 @@ Make the button that moves back to most recently placed tile
                     // offscreen canvas
                     const octx = this.offCtx;
                     octx.clearRect(0, 0, this.dw, this.dh);
-
-                    ctx.save();
-                    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-                    ctx.fillRect(this.x - 5, this.y - 5, this.dw + 10, this.dh + 10);
+                    octx.fillStyle = "rgba(224, 221,211,255)";
+                    octx.fillRect(0, 0, this.dw, this.dh);
                     
+                    ctx.save();
+                    
+                    ctx.save();
+                    ctx.setLineDash([]);
+                    ctx.strokeStyle = 'rgba(25, 25, 25)';
+                    ctx.lineWidth = 8;
+
+                    ctx.beginPath(); 
+                    ctx.moveTo(this.x - 4, this.y); 
+                    ctx.lineTo(this.x + this.dw + 4, this.y);
+                    ctx.stroke();
+
+                    ctx.beginPath();
+                    ctx.moveTo(this.x, this.y); 
+                    ctx.lineTo(this.x, this.y + this.dh + 4);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+
+                    ctx.restore();
+
+                    octx.setLineDash([5, 5]);
                     octx.strokeStyle = 'rgba(18, 18, 18, 0.6)';
                     // a little bit of math to find where to put the first line
                     const startingX = -this.panX + Math.ceil(this.panX / this.cellSize) * this.cellSize;
@@ -1945,6 +1965,7 @@ Make the button that moves back to most recently placed tile
                             );
                         }
                     }
+                    octx.setLineDash([]);
                     /*
                     //draw the tile being dragged above everything else
                     if (this.draggedTile) {
@@ -1967,7 +1988,7 @@ Make the button that moves back to most recently placed tile
             }
 
             //layout junk
-            const GAP = 50;
+            const GAP = 4;
             const TS = Math.floor(Math.min(width, height) / 12);
             const BOARD_Y = TS + 32;
 
@@ -2382,15 +2403,28 @@ Make the button that moves back to most recently placed tile
                 b.pool.update(dt);
                 b.handleInput();
                 b.pool.handleInput();
+                b.draw();
             }
             if (this.rightGrid) {
                 this.rightGrid.update(dt);
-                //this.rightGrid.handleInput();
                 this.rightGrid.pan();
                 this.rightGrid.draw();
             }
-            if (b) b.draw();
 
+            // single unified border around everything
+            const b2 = this.tileBoard;
+            if (b2 && this.rightGrid) {
+                ctx.save();
+                ctx.strokeStyle = 'rgba(25, 25, 25)';
+                ctx.lineWidth = 4;
+                ctx.strokeRect(
+                    b2.boardX - 5,
+                    b2.boardY - 5,
+                    (b2.cols1 + b2.cols2) * b2.tileSize + 10,
+                    b2.rows1 * b2.tileSize + 10
+                );
+                ctx.restore();
+            }
             //run particles (drawn on top, inside shake offset so they follow the camera)
             this.matchBurst.run(dt);
             this.placeBurst.run(dt);
