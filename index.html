@@ -447,10 +447,11 @@ Make the button that moves back to most recently placed tile
                  * @param {number} [top=10]
                  * @param {Object} [parent=null] - Reference to parent TileBoard for board coordinates and right grid.
                  */
-                constructor(tileSize, left = 10, top = 10, parent = null) {
+                constructor(tileSize, left = 10, top = 10, parent = null, poolWidth = 400) {
                     this.tileSize = tileSize; 
                     this.left = left;
                     this.top = top;
+                    this.poolWidth = poolWidth;
                     this.padding = 22;
                     this.spacing = 10;
                     this.tiles = [];
@@ -470,12 +471,21 @@ Make the button that moves back to most recently placed tile
                  * @param {number} slot
                  * @returns {{x:number,y:number}}
                  */
-                getTarget(slot) {
-                    const x = this.left + slot * this.spacing + this.tileSize / 2;
-                    const y = this.top + this.tileSize / 2;
+                getTarget(slot, total = null) {
+                    const count = total !== null ? total : this.tiles.length;
+
+                    //distance between first and last tile center
+                    const usable = this.poolWidth - this.tileSize;
+
+                    //evenly divide this always keeps groupWidth === poolWidth exactly
+                    const spacing = count > 1 ? usable / (count - 1) : 0;
+
+                    //group is always poolWidth wide so centering is just left + tileSize/2
+                    const startX = this.left + this.tileSize / 2;
+
                     return {
-                        x,
-                        y
+                        x: startX + slot * spacing,
+                        y: this.top + this.tileSize / 2
                     };
                 }
 
@@ -486,31 +496,42 @@ Make the button that moves back to most recently placed tile
                  */
                 add(tile) {
                     const slot = this.tiles.length;
+                    const newTotal = slot + 1;
+
                     tile.poolIndex = slot;
                     tile.inPool = true;
                     tile.toBePooled = false;
                     tile.beingDragged = false;
                     tile.matched = false;
                     tile.scale = 1;
-                    tile.opacity = 1; 
+                    tile.opacity = 1;
                     tile.rotation = 0;
 
-                    const t = this.getTarget(slot);
-                    tile.targetX = t.x;
-                    tile.targetY = t.y;
-
-                    
-                    const dx = Math.abs(tile.x - t.x);
-                    const dy = Math.abs(tile.y - t.y);
-                    if (dx > 1 || dy > 1) {
-                        tile.isMoving = true; 
-                    } else {
-                        tile.x = t.x;
-                        tile.y = t.y;
-                        tile.isMoving = false;
-                    }
-
                     this.tiles.push(tile);
+
+                    //reposition every tile including the one just pushed
+                    for (let i = 0; i < this.tiles.length; i++) {
+                        const p = this.tiles[i];
+                        const t = this.getTarget(i, newTotal);
+                        p.targetX = t.x;
+                        p.targetY = t.y;
+                        if (i < this.tiles.length - 1) {
+                            //existing tiles animate to their new spread positions
+                            p.isMoving = true;
+                        } 
+                        else {
+                            //only animate if it's not already there
+                            const dx = Math.abs(p.x - t.x);
+                            const dy = Math.abs(p.y - t.y);
+                            if (dx > 1 || dy > 1) {
+                                p.isMoving = true;
+                            } else {
+                                p.x = t.x;
+                                p.y = t.y;
+                                p.isMoving = false;
+                            }
+                        }
+                    }
                 }
 
                 /**
@@ -727,7 +748,7 @@ Make the button that moves back to most recently placed tile
                     }).map(e => []);
 
                     //tileSize, left = 10, top = 10, parent = null
-                    this.pool = new TilePool(this.tileSize, 24, 12, this);
+                    this.pool = new TilePool(this.tileSize, boardX, 12, this, totalBoardWidth);
                     this.selectedTile = null;
                     this.draggedTile = null;
                     this.draggedTileOriginal = null;
@@ -1026,13 +1047,8 @@ Make the button that moves back to most recently placed tile
                  * @returns {void}
                  */
                 handleMatches(matched) {
-                    if (!matched) {
-                        matched = this.findMatches();
-                    }
-                    if (matched.length === 0) {
-                        this.swapInProgress = false;
-                        return;
-                    }
+                    if (!matched) matched = this.findMatches();
+                    if (matched.length === 0) { this.swapInProgress = false; return; }
 
                     matched.forEach(tile => {
                         tile.matched = true;
@@ -1041,17 +1057,25 @@ Make the button that moves back to most recently placed tile
                         tile.isMoving = false;
                     });
 
-                    if (window.App && matched.length >= 3) {
-                        window.App.addShake(matched.length * 0.8);
-                    }
+                    if (window.App && matched.length >= 3) window.App.addShake(matched.length * 0.8);
 
-                    //track next slot per owner separately so tiles don't stack
+                    //count how many tiles are heading to each owner's pool
+                    const ownerCounts = new Map();
+                    matched.forEach(tile => {
+                        const owner = tile.board || this;
+                        ownerCounts.set(owner, (ownerCounts.get(owner) || 0) + 1);
+                    });
+
                     const ownerSlots = new Map();
                     matched.forEach(tile => {
                         const owner = tile.board || this;
                         const slot = ownerSlots.has(owner) ? ownerSlots.get(owner) : owner.pool.tiles.length;
                         ownerSlots.set(owner, slot + 1);
-                        const t = owner.pool.getTarget(slot);
+
+                        //final total urrent pool size and all tiles heading here
+                        const total = owner.pool.tiles.length + ownerCounts.get(owner);
+                        const t = owner.pool.getTarget(slot, total);
+
                         tile.targetX = t.x;
                         tile.targetY = t.y;
                         tile.isMoving = true;
@@ -1069,13 +1093,11 @@ Make the button that moves back to most recently placed tile
                 applyGravity() {
                     for (let col = 0; col < this.cols; col++) {
                         let writePos = this.rows - 1;
-
                         for (let row = this.rows - 1; row >= 0; row--) {
                             if (this.tiles[row][col] !== null) {
                                 if (row !== writePos) {
                                     this.tiles[writePos][col] = this.tiles[row][col];
                                     this.tiles[writePos][col].row = writePos;
-                                    //mark as moving so updatePosition does not snap them
                                     this.tiles[writePos][col].isMoving = true;
                                     this.tiles[row][col] = null;
                                 }
@@ -1084,13 +1106,12 @@ Make the button that moves back to most recently placed tile
                         }
                     }
 
-                    //update positions
+                    //update positions but never touch tiles that are already flying to the pool
                     for (let row = 0; row < this.rows; row++) {
                         for (let col = 0; col < this.cols; col++) {
-                            if (this.tiles[row][col]) {
-                                this.tiles[row][col].updatePosition(
-                                    this.tileSize, this.boardX, this.boardY
-                                );
+                            const t = this.tiles[row][col];
+                            if (t && !t.toBePooled) {
+                                t.updatePosition(this.tileSize, this.boardX, this.boardY);
                             }
                         }
                     }
@@ -1404,8 +1425,8 @@ Make the button that moves back to most recently placed tile
                     ctx.fillStyle = "rgba(224, 221, 211, 255)";
                     ctx.strokeStyle = "rgba(25, 25, 25)"; 
                     ctx.lineWidth = 4;
-                    ctx.fillRect(10, poolTop, width - 20, poolHeight + 5);
-                    ctx.strokeRect(10, poolTop, width - 20, poolHeight + 5);
+                    ctx.fillRect(this.boardX - 5, poolTop, totalBoardWidth + 10, poolHeight + 5);
+                    ctx.strokeRect(this.boardX - 5, poolTop, totalBoardWidth + 10, poolHeight + 5);
                     ctx.stroke(); 
                     ctx.globalAlpha = 1; 
                     ctx.restore();
@@ -2050,24 +2071,24 @@ Make the button that moves back to most recently placed tile
                 }
             }
 
-            //layout junk
             const GAP = 4;
             const TS = Math.floor(Math.min(width, height) / 12);
             const BOARD_Y = TS + 32;
 
-            // left board
             const leftBoardCols = 4;
-            const leftBoardX = 5;
             const leftBoardRows = Math.floor((height - BOARD_Y) / TS);
-
-            // right board
-            const rightBoardX = leftBoardCols * TS + GAP;
             const rightBoardRows = 5;
-            const rightBoardCols = Math.floor((width - rightBoardX) / TS);
+            const rightBoardCols = Math.floor((width * 0.58) / TS);
+
+            //total width of both boards then center
+            const totalBoardWidth = (leftBoardCols + rightBoardCols) * TS + GAP;
+            const offsetX = Math.floor((width - totalBoardWidth) / 2);
+
+            const leftBoardX  = offsetX;
+            const rightBoardX = offsetX + leftBoardCols * TS + GAP;
             const rightBoardY = BOARD_Y;
 
-            // placement grid centered in the space below the right board
-            const gridX = leftBoardX + leftBoardCols * TS + GAP;
+            const gridX = rightBoardX;
             const gridY = BOARD_Y + rightBoardRows * TS + GAP;
 
             this.rightGrid = new GridController(gridX, gridY, rightBoardCols * TS, (leftBoardRows - rightBoardRows) * TS, TS);
