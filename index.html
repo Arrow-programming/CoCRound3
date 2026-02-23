@@ -1197,15 +1197,18 @@
                  */
                 applyGravity() {
                     for (let col = 0; col < this.cols; col++) {
-                        //respect the L-shaped cutoutright columns only exist for the top rows2 rows
                         const maxRow = col < this.cols1 ? this.rows : this.rows2;
                         let writePos = maxRow - 1;
                         for (let row = maxRow - 1; row >= 0; row--) {
-                            if (this.tiles[row][col] != null) {
+                            const t = this.tiles[row][col]; 
+                            if (t != null) {
+                                if (t.toBePooled) {
+                                    continue;
+                                }
                                 if (row !== writePos) {
-                                    this.tiles[writePos][col] = this.tiles[row][col];
-                                    this.tiles[writePos][col].row = writePos;
-                                    this.tiles[writePos][col].isMoving = true;
+                                    this.tiles[writePos][col] = t;
+                                    t.row = writePos;
+                                    t.isMoving = true;
                                     this.tiles[row][col] = null;
                                 }
                                 writePos--;
@@ -1462,11 +1465,9 @@
                     if (!anyMoving && this.swapInProgress) {
                         //if this was a user-initiated swap, check its result after the visual swap and grav settles
                         if (this.pendingUserSwap) {
-                            // player has committed their move — bombs placed last turn are now fair game
-                            this.iterate((row, col) => {
-                                const t = this.tiles[row][col];
-                                if (t && t.freshlyPlaced) t.freshlyPlaced = false;
-                            });
+                            //     const t = this.tiles[row][col];
+                            //     if (t && t.freshlyPlaced) t.freshlyPlaced = false;
+                            // });
 
                             const matches = this.findMatches();
                             if (matches.length > 0) {
