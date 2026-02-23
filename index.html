@@ -1197,14 +1197,9 @@
                  */
                 applyGravity() {
                     for (let col = 0; col < this.cols; col++) {
-                        const maxRow = col < this.cols1 ? this.rows : this.rows2;
-                        let writePos = maxRow - 1;
-                        for (let row = maxRow - 1; row >= 0; row--) {
-                            const t = this.tiles[row][col]; 
-                            if (t != null) {
-                                if (t.toBePooled) {
-                                    continue;
-                                }
+                        let writePos = this.rows - 1;
+                        for (let row = this.rows - 1; row >= 0; row--) {
+                            if (this.tiles[row][col] !== null) {
                                 if (row !== writePos) {
                                     this.tiles[writePos][col] = t;
                                     t.row = writePos;
@@ -1465,10 +1460,6 @@
                     if (!anyMoving && this.swapInProgress) {
                         //if this was a user-initiated swap, check its result after the visual swap and grav settles
                         if (this.pendingUserSwap) {
-                            //     const t = this.tiles[row][col];
-                            //     if (t && t.freshlyPlaced) t.freshlyPlaced = false;
-                            // });
-
                             const matches = this.findMatches();
                             if (matches.length > 0) {
                                 this.pendingUserSwap = null;
