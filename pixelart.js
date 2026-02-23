@@ -269,6 +269,89 @@ const PixelArt = (() => {
             "hh",
             "h",
         ],
+        // Bomb tiles
+        [
+            " kkkkkkkkkkkkkkkkk",
+            "kkmmmmmmmmmmmmmmmkk",
+            "klllllllllllllllmmk",
+            "kllmmmmlmmmlmmmmlmk",
+            "kllmkkklmkmlkkkmlmk",
+            "kllmkmmlmkmlmmkmlmk",
+            "kklmkmklmkmlkmkmlmk",
+            "kklllllllllllllllmk",
+            "kklmmmmlmmmlmmmmlmk",
+            "kklmkkklmkmlkkkmlmk",
+            "kklmmmmlmmmlmmmmlmk",
+            "kklllllllllllllllmk",
+            "kklmkmllmkmllmkmlmk",
+            "kklmkmmlmkmlmmkmlmk",
+            "kklmkkklmkmlkkkmlmk",
+            "kkkmmmmlmmmlmmmmlmk",
+            "kkkklllllllllllllmk",
+            "kkkkkkkkkkkkkllllkk",
+            " kkkkkkkkkkkkkkkkk",
+        ],
+        [
+            "      kkaaaaakk",
+            "       kkaaakk",
+            "        kkakk",
+            "         kkk",
+        ],
+        [
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "                  k",
+            "                 kk",
+            "                kka",
+            "               kkaa",
+            "               kaaa",
+            "               kkaa",
+            "                kka",
+            "                 kk",
+            "                  k",
+        ],
+        [
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "         kkk",
+            "        kkakk",
+            "       kkaaakk",
+            "      kkaaaaakk",
+        ],
+        [
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "k",
+            "kk",
+            "akk",
+            "aakk",
+            "aaak",
+            "aakk",
+            "akk",
+            "kk",
+            "k",
+        ],
     ]; 
 
 
@@ -297,7 +380,7 @@ const PixelArt = (() => {
         return oc;
     }
 
-    //bake all 15 layers up-front
+    //bake all 20 layers up-front
     const C = GFX.map(bake);
 
     return {
@@ -306,7 +389,7 @@ const PixelArt = (() => {
          * Replaces all vertex-art drawing in the actual tile draw thingy
          */
         draw(ctx, colorIndex, sides, cx, cy, size, opacity, scale, isDragging) {
-            const base = (colorIndex % 3) * 5;
+            const base = colorIndex * 5;
             ctx.save();
             ctx.globalAlpha = opacity;
             ctx.translate(cx, cy);

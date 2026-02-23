@@ -1,8 +1,4 @@
 <!DOCTYPE html>
-<!--
-TODO:
-Make the button that moves back to most recently placed tile
--->
 <html> 
     <head>
         <!--Encoding and viewport-->
@@ -36,6 +32,7 @@ Make the button that moves back to most recently placed tile
                 <span class='material-icons' id='audio'>volume_up</span>
                 <span class='material-icons' id='reload'>refresh</span>
                 <span class='material-icons' id='back'>arrow_back</span>
+                <span class='material-icons' id='save'>save</span>
             </div>
         </div>
         <!--All the stinkn' UI-->
@@ -63,8 +60,10 @@ Make the button that moves back to most recently placed tile
     <!--Having a script type of 'module' allows me to modify the document with the script tag. A blank type or module type permits the use of ES6 JS. It should be noted that the same goal can be reached by wrapping a script with a blank type in (() => {})(); which is an unnamed IIFE. -->
     <script>
 (function Application() {
-    const pixelArtColors = ["#D1A593", "#6BCB77", "#45B7D1"];
+    const pixelArtColors = ["#D1A593", "#6BCB77", "#45B7D1", "#271232"];
     
+    const storedDataString = storage.getItem("axh-coc-round-3--data");
+    let storedData = JSON.parse(storedDataString) ?? Object.create(null);
 
     class Intro {
         constructor() {
@@ -264,8 +263,9 @@ Make the button that moves back to most recently placed tile
                  * @param {number} col - Column index on the board.
                  * @param {number} row - Row index on the board.
                  * @param {number} [colorIndex=0] - Index into `tileColors` for visual color.
+                 * @param {Object} sides - Indicators on sides of Tile instance.
                  */
-                constructor(col, row, colorIndex = 0) {
+                constructor(col, row, colorIndex = 0, sides) {
                     this.col = col;
                     this.row = row;
                     //0 or 1 blue or green
@@ -283,20 +283,22 @@ Make the button that moves back to most recently placed tile
                     this.beingDragged = false;
 
                     //side indicators
-                    this.sides = {
+                    this.sides = sides ?? {
                         left: false,
                         right: false,
                         up: false,
                         down: false
                     };
-                    //randomize
-                    const sidesArr = ["left", "right", "up", "down"];
-                    let count = Math.floor(Math.random() * 4) + 1;
-                    while (count > 0) {
-                        const i = Math.floor(Math.random() * sidesArr.length);
-                        const s = sidesArr.splice(i, 1)[0];
-                        this.sides[s] = true;
-                        count--;
+                    // randomize
+                    if (!sides) {
+                        const sidesArr = ["left", "right", "up", "down"];
+                        let count = Math.floor(Math.random() * 4) + 1;
+                        while (count > 0) {
+                            const i = Math.floor(Math.random() * sidesArr.length);
+                            const s = sidesArr.splice(i, 1)[0];
+                            this.sides[s] = true;
+                            count--;
+                        }
                     }
                 }
 
@@ -464,6 +466,17 @@ Make the button that moves back to most recently placed tile
                     this.invalidDropTile = null;
                     this.invalidDropTime = 0;
                     this.parent = parent;
+                    if (storedData.pool) {
+                        for (const i in storedData.pool) {
+                            const tileData = storedData.pool[i];
+                            const { colorIndex, sides } = tileData;
+                            const tile = new Tile(0, 0, colorIndex, sides);
+                            const { x, y } = this.getTarget(i, storedData.pool.length);
+                            tile.x = x;
+                            tile.y = y;
+                            this.tiles.push(tile);
+                        }
+                    }
                 }
 
                 /**
@@ -791,18 +804,29 @@ Make the button that moves back to most recently placed tile
                 //     });
                 // }
                 initBoard() {
-                    let attempts = 0;
-                    do {
+                    if (storedData.tileBoard) {
+                        const tbdata = storedData.tileBoard;
                         this.iterate((row, col) => {
-                            const colorIndex = Math.floor(Math.random() * pixelArtColors.length);
-                            const tile = new Tile(col, row, colorIndex);
+                            const { colorIndex, sides } = tbdata[row][col];
+                            const tile = new Tile(col, row, colorIndex, sides);
                             tile.updatePosition(this.tileSize, this.boardX, this.boardY);
                             this.tiles[row][col] = tile;
                             tile.board = this;
                         });
-                        attempts++;
-                        if (attempts > 200) break;
-                    } while (this.findMatches().length > 0 || !this.hasPossibleMove());
+                    } else {
+                        let attempts = 0;
+                        do {
+                            this.iterate((row, col) => {
+                                const colorIndex = Math.floor(Math.random() * 3);
+                                const tile = new Tile(col, row, colorIndex);
+                                tile.updatePosition(this.tileSize, this.boardX, this.boardY);
+                                this.tiles[row][col] = tile;
+                                tile.board = this;
+                            });
+                            attempts++;
+                            if (attempts > 200) break;
+                        } while (this.findMatches().length > 0 || !this.hasPossibleMove());
+                    }
                 }
 
                 /** Iterates a function through a TileBoard.
@@ -966,7 +990,7 @@ Make the button that moves back to most recently placed tile
                  */
                 findMatches() {
                     // find connected components where tiles have same color and both have indicators on the touching side
-                    const matched = [];
+                    const matchedComponents = [];
                     const visited = Array.from({
                         length: this.rows2
                     }, () => Array(this.cols).fill(false)).concat(
@@ -977,7 +1001,7 @@ Make the button that moves back to most recently placed tile
 
                     this.iterate((r, c) => {
                         const start = this.tiles[r][c];
-                        if (!start || visited[r][c]) return;
+                        if (!start || visited[r][c] || start.colorIndex == 3) return;
 
                         const color = start.colorIndex;
                         const stack = [start];
@@ -992,7 +1016,8 @@ Make the button that moves back to most recently placed tile
                             component.push(t);
 
                             //check four neighbors for bidirectional (fun word lol) indicator connection
-                            const neighbors = [{
+                            const neighbors = [
+                                {
                                     rr: tr - 1,
                                     cc: tc,
                                     side: 'up',
@@ -1023,7 +1048,7 @@ Make the button that moves back to most recently placed tile
                                 const nb = this.tiles[n.rr][n.cc];
                                 if (!nb) continue;
                                 if (visited[n.rr][n.cc]) continue;
-                                if (nb.colorIndex !== color) continue;
+                                if (nb.colorIndex !== color && nb.colorIndex !== 3) continue; // bomb tiles are
 
                                 //both tiles must have indicators on the contacting sides
                                 if (t.sides[n.side] && nb.sides[n.opp]) {
@@ -1034,45 +1059,80 @@ Make the button that moves back to most recently placed tile
 
                         if (component.length >= 3) {
                             //limit match removal to a maximum of 3 tiles per connected component
-                            const toAdd = component.slice(0, 3);
-                            for (const tile of toAdd) matched.push(tile);
+                            //const toAdd = component.slice(0, 3);
+                            //for (const tile of component) matched.push(tile);
+                            matchedComponents.push(component);
                         }
                     });
 
-                    return matched;
+                    return matchedComponents;
                 }
 
                 /**
                  * Mark matched tiles for pooling and initiate their movement into the pool.
                  * @returns {void}
                  */
-                handleMatches(matched) {
-                    if (!matched) matched = this.findMatches();
-                    if (matched.length === 0) { this.swapInProgress = false; return; }
+                handleMatches(matchedComponents) {
+                    if (!matchedComponents) matchedComponents = this.findMatches();
+                    if (matchedComponents.length === 0) { this.swapInProgress = false; return; }
 
-                    matched.forEach(tile => {
+                    matchedComponents.forEach(component => component.forEach(tile => {
                         tile.matched = true;
                         tile.toBePooled = true;
                         tile.inPool = false;
                         tile.isMoving = false;
-                    });
+                    }));
 
-                    if (window.App && matched.length >= 3) window.App.addShake(matched.length * 0.8);
+                    if (window.App) window.App.addShake(matchedComponents.length * 2.4);
+
+                    const matches = matchedComponents.flat();
+
+                    // add the effects of bomb tiles
+                    matches.forEach(tile => {
+                        if (tile.colorIndex === 3) {
+                            // TODO: make bomb tile completely disappear
+                            // TODO: make tiles removed by bomb tile appear in tile pool
+                            for (let row = tile.row - 2; row <= tile.row + 2; row ++) {
+                                for (let col = tile.col - 2; col <= tile.col + 2; col ++) {
+                                    if (this.inBounds(row, col)) {
+                                        const neighbor = this.tiles[row][col];
+                                        if (!(neighbor in matches)) {
+                                            matches.push(neighbor);
+                                        }
+                                    }
+                                }
+                            }
+                            const color = pixelArtColors[3];
+                            const cs = this.tileSize;
+
+                            //from edges
+                            const origins = [
+                                [tile.x + cs / 2, tile.y],
+                                [tile.x + cs / 2, tile.y + cs],
+                                [tile.x, tile.y + cs / 2],
+                                [tile.x + cs, tile.y + cs / 2],
+                            ];
+                            for (const [ox, oy] of origins) {
+                                window.App.placeBurst.add(ox, oy, color);
+                            }
+                        }
+                    });
 
                     //count how many tiles are heading to each owner's pool
                     const ownerCounts = new Map();
-                    matched.forEach(tile => {
+                    matches.forEach(tile => {
                         const owner = tile.board || this;
-                        ownerCounts.set(owner, (ownerCounts.get(owner) || 0) + 1);
+                        ownerCounts.set(owner, (ownerCounts.get(owner) ?? 0) + 1);
+                        window.console.log(ownerCounts.get(owner));
                     });
 
                     const ownerSlots = new Map();
-                    matched.forEach(tile => {
+                    matches.forEach(tile => {
                         const owner = tile.board || this;
                         const slot = ownerSlots.has(owner) ? ownerSlots.get(owner) : owner.pool.tiles.length;
                         ownerSlots.set(owner, slot + 1);
 
-                        //final total urrent pool size and all tiles heading here
+                        //final total current pool size and all tiles heading here
                         const total = owner.pool.tiles.length + ownerCounts.get(owner);
                         const t = owner.pool.getTarget(slot, total);
 
@@ -1081,6 +1141,14 @@ Make the button that moves back to most recently placed tile
                         tile.isMoving = true;
                         tile.rotation = 0;
                         owner.swapInProgress = true;
+                    });
+
+                    // If the matched components have 4 or more tiles in them, create a bomb tile
+                    matchedComponents.forEach(component => {
+                        if (component.length >= 4) {
+                            const rand = component[Math.floor(Math.random() * component.length)];
+                            this.tiles[rand.row][rand.col] = new Tile(rand.col, rand.row, 3);
+                        }
                     });
 
                     this.swapInProgress = true;
@@ -1125,7 +1193,7 @@ Make the button that moves back to most recently placed tile
                     for (let col = 0; col < this.cols; col++) {
                         for (let row = 0; row < this.rows; row++) {
                             if (this.tiles[row][col] === null) {
-                                const colorIndex = Math.floor(Math.random() * pixelArtColors.length);
+                                const colorIndex = Math.floor(Math.random() * 3);
                                 const tile = new Tile(col, row, colorIndex);
                                 tile.y = this.boardY - this.tileSize;
                                 tile.targetY = this.boardY + row * this.tileSize + this.tileSize / 2;
@@ -1650,6 +1718,14 @@ Make the button that moves back to most recently placed tile
 
                     //place it without checks
                     this._placeInternal(startTile, startCol, startRow);
+
+                    if (storedData.rightGrid) {
+                        for (const tileData of storedData.rightGrid) {
+                            const { col, row, tile: { colorIndex, sides} } = tileData;
+                            const tile = new Tile(col, row, colorIndex, sides);
+                            this.tiles.push({ col, row, tile });
+                        }
+                    }
                 }
 
                 /**
@@ -2004,17 +2080,19 @@ Make the button that moves back to most recently placed tile
                     octx.strokeStyle = 'rgba(18, 18, 18, 0.6)';
                     // a little bit of math to find where to put the first line
                     const startingX = -this.panX + Math.ceil(this.panX / this.cellSize) * this.cellSize;
+                    const dashX = -this.panY + Math.ceil(this.panY / 10) * 10;
                     for (let x = startingX; x <= this.dw; x += this.cellSize) {
                         octx.beginPath();
-                        octx.moveTo(x, 0);
-                        octx.lineTo(x, this.dh);
+                        octx.moveTo(x, -5 + dashX);
+                        octx.lineTo(x, this.dh + dashX);
                         octx.stroke();
                     }
                     const startingY = -this.panY + Math.ceil(this.panY / this.cellSize) * this.cellSize;
+                    const dashY = -this.panX + Math.ceil(this.panX / 10) * 10;
                     for (let y = startingY; y <= this.dh; y += this.cellSize) {
                         octx.beginPath();
-                        octx.moveTo(0, y);
-                        octx.lineTo(this.dw, y);
+                        octx.moveTo(-5 + dashY, y);
+                        octx.lineTo(this.dw + dashY, y);
                         octx.stroke();
                     }
 
@@ -2667,6 +2745,13 @@ Make the button that moves back to most recently placed tile
             this.scenes(DT);
         };
 
+        /* Reset the entire App */
+        App.prototype.resetGame = function() {
+            storedData = Object.create(null);
+            storage.removeItem("axh-coc-round-3--data");
+            App.call(this);
+        };
+
         return App;
     })();
 
@@ -2731,20 +2816,6 @@ Make the button that moves back to most recently placed tile
             //reset events
             mouse.released = false;
             mouse.clicked = false;
-
-            const button2 = document.getElementById("reload");
-
-            // //clear local storage
-            // const clearLocal = () => {
-            //     storage.clear();
-            //     //alert(JSON.stringify(storage))
-            // };
-
-            button2.addEventListener("click", () => {
-                if (App && typeof App.resetGame === 'function') {
-                    //App.resetGame();
-                }
-            });
 
             //frameCount
             frameCount++;
@@ -2903,6 +2974,39 @@ Make the button that moves back to most recently placed tile
     // Back to last placed tile
     document.querySelector("#back").addEventListener("click", e => {
         window.App.rightGrid.panToLastPlaced();
+    });
+
+    // Save to local storage
+    document.querySelector("#save").addEventListener("click", e => {
+        try {
+            // basically what this does is it takes only the sides and colorIndex data,
+            // to avoid storing too much
+            const tileMapper = ({ sides, colorIndex }) => ({ sides, colorIndex });
+
+            // Compile all the data into a single object
+            const data = {
+                tileBoard: window.App.tileBoard.tiles.map(
+                    row => row.map(tileMapper)
+                ),
+                pool: window.App.tileBoard.pool.tiles.map(tileMapper),
+                rightGrid: window.App.rightGrid.tiles.map(
+                    ({ row, col, tile }) => ({ row, col, tile: tileMapper(tile) })
+                ),
+            };
+            
+            storage.setItem("axh-coc-round-3--data", JSON.stringify(data));
+
+            alert("Saved!");
+        } catch (e) {
+            alert("Oops, something went wrong, and we don't know what. :/");
+        }
+    });
+
+    document.querySelector("#reload").addEventListener("click", () => {
+        const prmpt = "Are you sure you want to reset? You will lose all your progress.";
+        if (confirm(prmpt)) {
+            App.resetGame();
+        }
     });
 
     //intiate...
