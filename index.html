@@ -783,9 +783,6 @@
                     this.reversingSwap = null;
                     //set true when reverse animation running
                     this.justReversed = false;
-                    
-                    //hi, how are you today?
-                    this.pendingBombCols = [];
 
                     this.initBoard();
                 }
@@ -1004,7 +1001,7 @@
 
                     this.iterate((r, c) => {
                         const start = this.tiles[r][c];
-                        if (!start || visited[r][c] || start.colorIndex === 3) return;
+                        if (!start || visited[r][c] || start.colorIndex == 3) return;
 
                         const color = start.colorIndex;
                         const stack = [start];
@@ -1051,16 +1048,7 @@
                                 const nb = this.tiles[n.rr][n.cc];
                                 if (!nb) continue;
                                 if (visited[n.rr][n.cc]) continue;
-                                //if (nb.colorIndex !== color && nb.colorIndex !== 3) continue; 
-                                // const tIsBomb = t.colorIndex === 3;
-                                // const nbIsBomb = nb.colorIndex === 3;
-                                // if (!tIsBomb && !nbIsBomb && nb.colorIndex !== color) continue;
-                                // if (!tIsBomb && nbIsBomb) { /* bomb connects to any color, allow */ }
-                                // if (tIsBomb && !nbIsBomb) { /* bomb can chain to any neighbor color */ }
-                                    
-                                    ///yes!!
-                                //if (t.colorIndex !== 3 && nb.colorIndex !== color && nb.colorIndex !== 3) continue;
-                                if (t.colorIndex !== 3 && nb.colorIndex !== color && (nb.colorIndex !== 3 || nb.freshlyPlaced)) continue;
+                                if (nb.colorIndex !== color && nb.colorIndex !== 3) continue; // bomb tiles are
 
                                 //both tiles must have indicators on the contacting sides
                                 if (t.sides[n.side] && nb.sides[n.opp]) {
@@ -1098,72 +1086,53 @@
                     if (window.App) window.App.addShake(matchedComponents.length * 2.4);
 
                     const matches = matchedComponents.flat();
-                    const matchSet = new Set(matches);
 
-
-                    matches.forEach(tile => {  
+                    // add the effects of bomb tiles
+                    matches.forEach(tile => {
                         if (tile.colorIndex === 3) {
-                            //bomb should vanish via explosion no animation so mark as pooled
-                            tile.matched = false;
-                            tile.toBePooled = false;
-                            tile.inPool = false;
-
-                            //remove it from the grid immediately so gravity fills its spot
-                            if (this.inBounds(tile.row, tile.col) &&
-                                this.tiles[tile.row][tile.col] === tile) {
-                                this.tiles[tile.row][tile.col] = null;
-                            }
-
-                            //add all tiles in 5x5 area to the match set
-                            for (let row = tile.row - 2; row <= tile.row + 2; row++) {
-                                for (let col = tile.col - 2; col <= tile.col + 2; col++) {
-                                    if (!this.inBounds(row, col)) continue;
-                                    const neighbor = this.tiles[row][col];
-                                    //skip null cells and tiles already queued
-                                    if (!neighbor || matchSet.has(neighbor)) continue;
-                                    matchSet.add(neighbor);
-                                    matches.push(neighbor);
-                                    //mark blast-radius tiles for pooling too
-                                    neighbor.matched = true;
-                                    neighbor.toBePooled = true;
-                                    neighbor.inPool = false;
-                                    neighbor.isMoving = false;
+                            // TODO: make bomb tile completely disappear
+                            // TODO: make tiles removed by bomb tile appear in tile pool
+                            for (let row = tile.row - 2; row <= tile.row + 2; row ++) {
+                                for (let col = tile.col - 2; col <= tile.col + 2; col ++) {
+                                    if (this.inBounds(row, col)) {
+                                        const neighbor = this.tiles[row][col];
+                                        if (!(neighbor in matches)) {
+                                            matches.push(neighbor);
+                                        }
+                                    }
                                 }
                             }
-
-                            //effects!!
-                            PixelArtExploder.explode(tile, this.tileSize, window.App.matchBurst, 3);
-
                             const color = pixelArtColors[3];
-                            const cs    = this.tileSize;
+                            const cs = this.tileSize;
+
+                            //from edges
                             const origins = [
                                 [tile.x + cs / 2, tile.y],
                                 [tile.x + cs / 2, tile.y + cs],
                                 [tile.x, tile.y + cs / 2],
                                 [tile.x + cs, tile.y + cs / 2],
-                            ]; 
+                            ];
                             for (const [ox, oy] of origins) {
                                 window.App.placeBurst.add(ox, oy, color);
                             }
-                            window.App.addShake(8);
                         }
                     });
 
-                    //only tiles actually heading to the pool (bombs are destroyed in place)
-                    const poolableTiles = matches.filter(t => t.toBePooled);
-
+                    //count how many tiles are heading to each owner's pool
                     const ownerCounts = new Map();
-                    poolableTiles.forEach(tile => {
+                    matches.forEach(tile => {
                         const owner = tile.board || this;
                         ownerCounts.set(owner, (ownerCounts.get(owner) ?? 0) + 1);
+                        window.console.log(ownerCounts.get(owner));
                     });
 
                     const ownerSlots = new Map();
-                    poolableTiles.forEach(tile => {
+                    matches.forEach(tile => {
                         const owner = tile.board || this;
                         const slot = ownerSlots.has(owner) ? ownerSlots.get(owner) : owner.pool.tiles.length;
                         ownerSlots.set(owner, slot + 1);
 
+                        //final total current pool size and all tiles heading here
                         const total = owner.pool.tiles.length + ownerCounts.get(owner);
                         const t = owner.pool.getTarget(slot, total);
 
@@ -1174,17 +1143,11 @@
                         owner.swapInProgress = true;
                     });
 
+                    // If the matched components have 4 or more tiles in them, create a bomb tile
                     matchedComponents.forEach(component => {
                         if (component.length >= 4) {
-                            //find the tile spatially closest to the center of the component(?) Basically bomb is created with every four tile match
-                            const avgCol = component.reduce((s, t) => s + t.col, 0) / component.length;
-                            const avgRow = component.reduce((s, t) => s + t.row, 0) / component.length;
-                            const center = component.reduce((best, t) => {
-                                const d = Math.hypot(t.col - avgCol, t.row - avgRow);
-                                const bd = Math.hypot(best.col - avgCol, best.row - avgRow);
-                                return d < bd ? t : best;
-                            });
-                            this.pendingBombCols.push({ col: center.col, row: center.row });
+                            const rand = component[Math.floor(Math.random() * component.length)];
+                            this.tiles[rand.row][rand.col] = new Tile(rand.col, rand.row, 3);
                         }
                     });
 
@@ -1201,9 +1164,9 @@
                         for (let row = this.rows - 1; row >= 0; row--) {
                             if (this.tiles[row][col] !== null) {
                                 if (row !== writePos) {
-                                    this.tiles[writePos][col] = t;
-                                    t.row = writePos;
-                                    t.isMoving = true;
+                                    this.tiles[writePos][col] = this.tiles[row][col];
+                                    this.tiles[writePos][col].row = writePos;
+                                    this.tiles[writePos][col].isMoving = true;
                                     this.tiles[row][col] = null;
                                 }
                                 writePos--;
@@ -1211,13 +1174,15 @@
                         }
                     }
 
-                    //use iterate() so never touch out-of-bounds slots in the cutout
-                    this.iterate((row, col) => {
-                        const t = this.tiles[row][col];
-                        if (t && !t.toBePooled) { 
-                            t.updatePosition(this.tileSize, this.boardX, this.boardY);
+                    //update positions but never touch tiles that are already flying to the pool
+                    for (let row = 0; row < this.rows; row++) {
+                        for (let col = 0; col < this.cols; col++) {
+                            const t = this.tiles[row][col];
+                            if (t && !t.toBePooled) {
+                                t.updatePosition(this.tileSize, this.boardX, this.boardY);
+                            }
                         }
-                    });
+                    }
                 }
 
                 /**
@@ -1226,10 +1191,8 @@
                  */
                 fillGaps() {
                     for (let col = 0; col < this.cols; col++) {
-                        //respect the L-shaped cutout
-                        const maxRow = col < this.cols1 ? this.rows : this.rows2;
-                        for (let row = 0; row < maxRow; row++) {
-                            if (this.tiles[row][col] == null) {
+                        for (let row = 0; row < this.rows; row++) {
+                            if (this.tiles[row][col] === null) {
                                 const colorIndex = Math.floor(Math.random() * 3);
                                 const tile = new Tile(col, row, colorIndex);
                                 tile.y = this.boardY - this.tileSize;
@@ -1237,10 +1200,12 @@
                                 tile.targetX = this.boardX + col * this.tileSize + this.tileSize / 2;
                                 tile.x = tile.targetX;
                                 this.tiles[row][col] = tile;
+                                //same as initBoard:
                                 tile.board = this;
                             }
                         }
                     }
+
                 }
 
                 /**
@@ -1248,13 +1213,6 @@
                  * @returns {boolean}
                  */
                 hasPossibleMove() {
-                    //if any bomb is on the board, moves always exist (bomb can be matched)
-                    let hasBomb = false;
-                    this.iterate((r, c) => {
-                        if (this.tiles[r][c]?.colorIndex === 3) hasBomb = true;
-                    });
-                    if (hasBomb) return true;
-
                     //returns true if there exists at least one adjacent swap that would create a match
                     const inBounds = (r, c) => r >= 0 && r < this.rows && c >= 0 && c < this.cols;
 
@@ -1368,19 +1326,19 @@
                                 }
                             }
                         }
-                        attempts++; 
+                        attempts++;
                         if (attempts > 200) break;
                     } while (this.findMatches().length > 0 || !this.hasPossibleMove());
                 }
 
-                /** 
+                /**
                  * Update board state: animate tiles, detect pooling completions, handle swaps and matches.
                  * @param {number} dt - Delta time in seconds.
                  * @returns {void}
                  */
                 update(dt) {
                     // update all tiles
-                    this.iterate((row, col) => this.tiles[row][col]?.animate(dt));
+                    this.iterate((row, col) => this.tiles[row][col].animate(dt));
 
                     // check for tiles that finished animating into the pool and move them from grid to pool
                     let pooledThisFrame = [];
@@ -1401,37 +1359,8 @@
 
                     if (pooledThisFrame.length > 0) {
                         this.applyGravity();
-
-                        //try to place each pending bomb an re-queue any that can't fit yet
-                        const stillPending = [];
-                        for (const { col } of this.pendingBombCols) {
-                            const maxRow = col < this.cols1 ? this.rows : this.rows2;
-                            let placedRow = -1;
-                            for (let row = 0; row < maxRow; row++) {
-                                if (!this.tiles[row][col]) { placedRow = row; break; }
-                            }
-                            if (placedRow === -1) {
-                                //column still has departing tiles so retry next frame
-                                stillPending.push({ col }); 
-                                continue;
-                            }
-                            const bomb = new Tile(col, placedRow, 3);
-                            bomb.sides = { left: true, right: true, up: true, down: true };
-                            bomb.y = this.boardY - this.tileSize;
-                            bomb.targetY = this.boardY + placedRow * this.tileSize + this.tileSize / 2;
-                            bomb.targetX = this.boardX + col * this.tileSize + this.tileSize / 2;
-                            bomb.x = bomb.targetX;
-                            bomb.isMoving = true;
-                            bomb.board = this;
-                            bomb.freshlyPlaced = true;
-                            this.tiles[placedRow][col] = bomb;
-                        }
-                        this.pendingBombCols = stillPending;
-
-                        //only fill gaps once all bombs are placed otherwise fillGaps steals the empty slot
-                        if (this.pendingBombCols.length === 0) {
-                            this.fillGaps();
-                        }
+                        this.fillGaps();
+                        // don't interupt 
                         this.swapInProgress = true;
                     }
 
@@ -1462,25 +1391,30 @@
                         if (this.pendingUserSwap) {
                             const matches = this.findMatches();
                             if (matches.length > 0) {
+                                //valid swap so clear pending and handle matches normally
                                 this.pendingUserSwap = null;
+                                //pass in
                                 this.handleMatches(matches);
                             } else {
+                                //invalid swap so reverse with animation and show invalid overlay
                                 const t1 = this.pendingUserSwap.tile1;
                                 const t2 = this.pendingUserSwap.tile2;
                                 this.pendingUserSwap = null;
                                 this.invalidSwap = true;
                                 this.invalidSwapTile = t1;
                                 this.invalidSwapTime = 0;
-                                this.reversingSwap = { tile1: t1, tile2: t2 };
+                                this.reversingSwap = {
+                                    tile1: t1,
+                                    tile2: t2
+                                };
                                 this.reverseSwap(t1, t2);
                                 if (window.App) window.App.addShake(2.5);
-                            
                             }
                         } else if (this.justReversed) {
                             //finished reversing an invalid swap clear flags
                             this.swapInProgress = false;
                             this.justReversed = false;
-                            this.invalidSwap = false; 
+                            this.invalidSwap = false;
                             this.invalidSwapTile = null;
                             this.invalidSwapTime = 0;
                             this.reversingSwap = null;
@@ -1488,14 +1422,9 @@
                             //check for cascade matches after gravity settles
                             const matches = this.findMatches();
                             if (matches.length > 0) {
-                                //pass in baby 
+                                //pass in baby
                                 this.handleMatches(matches);
                             } else {
-                                // clear freshlyPlaced so bombs can be matched next turn
-                                // this.iterate((row, col) => {
-                                //     const t = this.tiles[row][col];
-                                //     if (t && t.freshlyPlaced) t.freshlyPlaced = false;
-                                // });
                                 if (!this.hasPossibleMove()) this.reshuffleBoard();
                                 this.swapInProgress = false;
                             }
@@ -2539,9 +2468,9 @@
 
                 //read pixel daata
                 const imageData = offCtx.getImageData(0, 0, tileSize, tileSize);
-                const pixels    = imageData.data;
-                const centerX   = tile.x;
-                const centerY   = tile.y;
+                const pixels = imageData.data;
+                const centerX = tile.x;
+                const centerY = tile.y;
 
                 for (let py = 0; py < tileSize; py += sampleStep) {
                     for (let px = 0; px < tileSize; px += sampleStep) {
@@ -2571,20 +2500,21 @@
                                 x: centerX - tileSize / 2 + px,
                                 y: centerY - tileSize / 2 + py
                             },
-                            velocity:     { x: vx, y: vy },
-                            size:         sampleStep + Math.random() * 2,
-                            color:        `rgb(${r},${g},${b})`,
-                            life:         55 + Math.random() * 65,
-                            acceleration: { x: (Math.random() - 0.5) * 0.3, y: 5 }, // gravity pull
-                            angle:        Math.random() * 360,
-                            rotation:     (Math.random() - 0.5) * 700,
-                            clear:        true,
-                            opacity:      1
+                            velocity:{ x: vx, y: vy },
+                            size: sampleStep + Math.random() * 2,
+                            color: `rgb(${r},${g},${b})`,
+                            life: 55 + Math.random() * 65,
+                            acceleration: { x: (Math.random() - 0.5) * 0.3, y: 5 },
+                            angle: Math.random() * 360,
+                            rotation: (Math.random() - 0.5) * 700,
+                            clear: true,
+                            opacity: 1
                         }));
                     }
                 }
             }
         }
+
 
         /**
          * coordinates the creation, updating, and pooled recycling of multiple particles
