@@ -388,7 +388,7 @@ const PixelArt = (() => {
          * Draw a pixel-art tile and its active side indicators.
          * Replaces all vertex-art drawing in the actual tile draw thingy
          */
-        draw(ctx, colorIndex, sides, cx, cy, size, opacity, scale, isDragging) {
+        draw(ctx, colorIndex, sides, cx, cy, size, opacity, scale, isDragging, grayed = false) {
             const base = colorIndex * 5;
             ctx.save();
             ctx.globalAlpha = opacity;
@@ -399,11 +399,17 @@ const PixelArt = (() => {
             const dx = -size / 2, dy = -size / 2;
             const px = size / W;
             ctx.drawImage(C[base], dx, dy, size, size);
+            // graying
+            if (grayed) {
+                ctx.fillStyle = "#7f7f7f44";
+                ctx.fillRect(dx, dy, size, size)
+            }
             if (sides.up) ctx.drawImage(C[base + 1], dx - px, dy, size, size);
             if (sides.right) ctx.drawImage(C[base + 2], dx, dy - px, size, size);
             if (sides.down) ctx.drawImage(C[base + 3], dx - px, dy, size, size);
             if (sides.left) ctx.drawImage(C[base + 4], dx, dy - px, size, size);
             
+
             //drag highlight
             if (isDragging) {
                 ctx.strokeStyle = 'rgba(255, 255, 180, 0.9)';

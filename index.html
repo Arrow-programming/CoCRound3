@@ -1756,7 +1756,8 @@
                     this.tiles.push({
                         tile,
                         col,
-                        row
+                        row,
+                        turn: (window.App?.turn ?? 0)
                     });
                     tile.inPool = false;
                     tile.inGrid = true;
@@ -1817,7 +1818,7 @@
                  * @returns {Tile|undefined}
                  */
                 getTile(col, row) {
-                    return this.tiles.find(e => e.col == col && e.row == row)?.tile;
+                    return this.tiles.find(e => e.col == col && e.row == row);
                 }
 
                 /**
@@ -1868,10 +1869,13 @@
                         const nr = row + n.dr;
                         const neighbor = this.getTile(nc, nr);
                         if (!neighbor) continue;
-                        numNeighbors++;
+                        // if tile is placed less than 2 turns ago
+                        if ((window.App?.turn ?? 0) - neighbor.turn < 2) {
+                            numNeighbors++;
+                        }
                         if (
-                            (tile.sides?.[n.mySide] && neighbor.sides?.[n.theirSide]) ||
-                            (!tile.sides?.[n.mySide] && !neighbor.sides?.[n.theirSide])
+                            (tile.sides?.[n.mySide] && neighbor.tile.sides?.[n.theirSide]) ||
+                            (!tile.sides?.[n.mySide] && !neighbor.tile.sides?.[n.theirSide])
                         ) {
                             continue;
                         }
@@ -1879,122 +1883,6 @@
                     }
 
                     return numNeighbors > 0;
-                }
-
-                /**
-                 * Remove the tile entry at the given cell from the internal tiles array.
-                 * Does not animate or return the tile — callers are responsible for
-                 * re-placing or discarding the tile object afterward.
-                 * @param {number} col - Column of the tile to remove.
-                 * @param {number} row - Row of the tile to remove.
-                 * @returns {void}
-                 */
-                remove(col, row) {/*
-                    const idx = this.tiles.findIndex(e => e.col === col && e.row === row);
-                    if (idx >= 0) this.tiles.splice(idx, 1);*/
-                }
-
-                /**
-                 * ARROW. Can you please expain why this exists?
-                 * I thought the tiles on the grid were permanent.
-                 * 
-                 * Process pointer input each frame to support dragging tiles within the grid.
-                 * On press: lifts the tile under the pointer out of the grid.
-                 * On hold: follows the pointer.
-                 * On release: attempts to place the tile in the target cell, running
-                 *  anPlace checks for both empty-cell drops and same-cell swaps.
-                 *   On failure, the tile snaps back to its origin and triggers the invalid flash.
-                 * @returns {void}
-                 */
-                handleInput() {/*
-                    //for simplicity. Don't have to keep finding the mouse object
-                    const {
-                        screenX,
-                        screenY,
-                        down,
-                        wasDown
-                    } = mouse;
-                    const clickHappened = down && !wasDown;
-                    const released = !down && wasDown;
-
-                    if (clickHappened && !this.draggedTile) {
-                        const {
-                            x: wx,
-                            y: wy
-                        } = screenToWorld(screenX, screenY);
-                        const cell = this.getCellAtPos(wx, wy);
-                        if (cell) {
-                            const tile = this.getTile(cell.col, cell.row);
-                            if (tile) {
-                                //lift tile off the grid
-                                this.remove(cell.col, cell.row);
-                                this.draggedTile = tile;
-                                this.draggedOrigCol = cell.col;
-                                this.draggedOrigRow = cell.row;
-                                this.dragOffsetX = wx - tile.x;
-                                this.dragOffsetY = wy - tile.y;
-                                tile.beingDragged = true;
-                                tile.scale = 1.2;
-                            }
-                        }
-                    } else if (this.draggedTile && down) {
-                        const {
-                            x: wx,
-                            y: wy
-                        } = screenToWorld(screenX, screenY);
-                        this.draggedTile.x = wx - this.dragOffsetX;
-                        this.draggedTile.y = wy - this.dragOffsetY;
-
-                    } else if (released && this.draggedTile) {
-                        const tile = this.draggedTile;
-                        tile.beingDragged = false;
-                        tile.scale = 1;
-                        this.draggedTile = null;
-
-                        const origCol = this.draggedOrigCol;
-                        const origRow = this.draggedOrigRow;
-                        this.draggedOrigCol = null;
-                        this.draggedOrigRow = null;
-
-                        const dropCell = this.getCellAtPos(tile.x, tile.y);
-                        let placed = false;
-
-                        if (dropCell) {
-                            const existing = this.getTile(dropCell.col, dropCell.row);
-
-                            if (existing) {
-                                //temporarily remove existing so canPlace sees clean neighbors
-                                this.remove(dropCell.col, dropCell.row);
-
-                                const tileCanGo = this.canPlace(tile, dropCell.col, dropCell.row);
-                                const existingCanGo = this.canPlace(existing, origCol, origRow);
-
-                                if (tileCanGo && existingCanGo) {
-                                    //valid swap commit both moves
-                                    this._placeInternal(existing, origCol, origRow);
-                                    this._placeInternal(tile, dropCell.col, dropCell.row);
-                                    placed = true;
-                                } else {
-                                    //invalid swap put existing back in place, then snap tile home
-                                    this._placeInternal(existing, dropCell.col, dropCell.row);
-                                }
-                            } else {
-                                //empty cell case validate before placing
-                                if (this.canPlace(tile, dropCell.col, dropCell.row)) {
-                                    this._placeInternal(tile, dropCell.col, dropCell.row);
-                                    placed = true;
-                                    if (window.App) window.App.addShake(0.8);
-                                }
-                            }
-                        }
-
-                        if (!placed) {
-                            //return tile to its original position and flash an invalid indicator
-                            this._placeInternal(tile, origCol, origRow);
-                            this.invalidSwap = true;
-                            this.invalidSwapTimer = 0;
-                        }
-                    }*/
                 }
 
                 /**
@@ -2121,7 +2009,8 @@
                                 this.cellSize,
                                 et.opacity,
                                 et.scale,
-                                false
+                                false,
+                                (window.App?.turn ?? 0) - entry.turn >= 2 // gray the tile if placed more than 2 turns ago
                             );
                         }
                     }
@@ -2158,7 +2047,7 @@
                  * @param {number} duration - Duration in seconds
                  */
                 constructor(duration) {
-                    this.lastReset = Date.now();
+                    this.lastReset = (Date.now() - (storedData.timeUsed ?? 0) * 1000);
                     this.duration = duration;
                 }
 
@@ -2224,7 +2113,7 @@
             this.tileBoard = new TileBoard(leftBoardCols, leftBoardRows, rightBoardCols, rightBoardRows, leftBoardX, BOARD_Y, TS);
 
             this.turnTimer = new TurnTimer(40);
-            this.turn = 0;
+            this.turn = storedData.turn ?? 0;
 
             //trigger a one-time cascade check on the board so seam matches get cleared at startup(?)
             this.tileBoard.swapInProgress = true;
@@ -3139,6 +3028,8 @@
                 rightGrid: window.App.rightGrid.tiles.map(
                     ({ row, col, tile }) => ({ row, col, tile: tileMapper(tile) })
                 ),
+                turn: window.App.turn,
+                timeUsed: window.App.turnTimer.duration - window.App.turnTimer.timeLeft,
             };
             
             storage.setItem("axh-coc-round-3--data", JSON.stringify(data));
