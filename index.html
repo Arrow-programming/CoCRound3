@@ -19,6 +19,30 @@
         <link rel="stylesheet" href="style.css" /><!-- COMBINE -->
     </head> 
     <body>
+        <div id="tutorial-overlay">
+            <div id="tutorial-card">
+                <h2 id="tutorial-title">HOW TO PLAY</h2>
+                <div id="tutorial-steps">
+                    <div class="tut-step">
+                        <div class="tut-num">1</div>
+                        <p>Match <span class="hl">THREE TILES</span> of the same color to add them to your pool</p>
+                    </div>
+                    <div class="tut-step">
+                        <div class="tut-num">2</div>
+                        <p>Match <span class="hl">FOUR TILES</span> to create a <span class="hl">BOMB</span></p>
+                    </div>
+                    <div class="tut-step">
+                        <div class="tut-num">3</div>
+                        <p>Drag tiles from the <span class="hl">POOL</span> into the placement grid</p>
+                    </div>
+                    <div class="tut-step">
+                        <div class="tut-num">4</div>
+                        <p>Tiles score based on <span class="hl">NEIGHBORS</span> of the same color above and below</p>
+                    </div>
+                </div>
+                <button id="tutorial-close">LET'S PLAY!</button>
+            </div>
+        </div>
         <!--The container for the entire thing-->
         <div id="container">
             <div id="game-wrapper">
@@ -49,36 +73,6 @@
             </div>
         </div>
         <canvas id = "thumb"></canvas>
-        <!-- Tutorial Popup -->
-        <div id="tutorial-overlay">
-            <div id="tutorial-card">
-                <h2 id="tutorial-title">HOW TO PLAY</h2>
-            <div id="tutorial-steps">
-
-            <div class="tut-step">
-                <div class="tut-preview"></div>
-                <p>Match three tiles to add them to your pool</p>
-            </div>
-
-            <div class="tut-step">
-                <div class="tut-preview"></div>
-                <p>Bombs can be made with 4 tiles</p>
-            </div>
-
-            <div class="tut-step">
-                <div class="tut-preview"></div>
-                <p>Place tiles from the pool into the grid</p>
-            </div>
-
-            <div class="tut-step">
-                <div class="tut-preview"></div>
-                <p>Tiles score based on neighbors of the same color, or above and below</p>
-            </div>
-
-            </div>
-                <button id="tutorial-close">Let's Play!</button>
-            </div>
-        </div>
     </body>
     
     <script src="htmlSetUp.js"></script>
@@ -91,6 +85,24 @@
     <!--Having a script type of 'module' allows me to modify the document with the script tag. A blank type or module type permits the use of ES6 JS. It should be noted that the same goal can be reached by wrapping a script with a blank type in (() => {})(); which is an unnamed IIFE. -->
     <script>
 (function Application() {
+    let inTutorial = true;
+    (function initTutorial() {
+        const overlay = document.getElementById('tutorial-overlay');
+        const closeBtn = document.getElementById('tutorial-close');
+        const SEEN_KEY = 'axh-coc-tutorial-seen';
+        if (localStorage.getItem(SEEN_KEY)) {
+            overlay.classList.add('hidden');
+            inTutorial = false;
+            return;
+        }
+
+        closeBtn.addEventListener('click', () => {
+            overlay.classList.add('hidden');
+            localStorage.setItem(SEEN_KEY, '1');
+            inTutorial = false;
+        });
+    })();
+
     const pixelArtColors = ["#D1A593", "#6BCB77", "#45B7D1", "#271232"];
     
     const storedDataString = storage.getItem("axh-coc-round-3--data");
@@ -2646,6 +2658,9 @@
                 this.matchedYet = false;
                 b.pool.tiles = [];
             }
+            if (inTutorial) {
+                this.turnTimer.reset();
+            }
 
             // single unified border around everything
             const b2 = this.tileBoard;
@@ -3065,7 +3080,7 @@
     document.querySelector("#endturn").addEventListener("click", () => {
         if (window.App.tileBoard.pool.tiles.length) {
             alert("You still have tiles in the tile pool. Clear them before ending your turn!");
-        } else if (window.App.matchedYet) {
+        } else if (!window.App.matchedYet) {
             alert("You haven't made a match yet. Make one before ending your turn!");
         } else {
             window.App.turnTimer.reset();
@@ -3103,21 +3118,6 @@
 
 
     firstFrame = false;
-
-    (function initTutorial() {
-        const overlay = document.getElementById('tutorial-overlay');
-        const closeBtn = document.getElementById('tutorial-close');
-        const SEEN_KEY = 'axh-coc-tutorial-seen';
-        if (localStorage.getItem(SEEN_KEY)) {
-            overlay.classList.add('hidden');
-            return;
-        }
-
-        closeBtn.addEventListener('click', () => {
-            overlay.classList.add('hidden');
-            localStorage.setItem(SEEN_KEY, '1');
-        });
-    })();
 
     return {
         Application,

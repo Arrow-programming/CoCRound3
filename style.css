@@ -181,98 +181,97 @@ canvas:focus {
     user-select: none;
 }
 
+#tutorial-card {
+    background: rgb(233, 233, 233);
+    border: 4px solid rgb(25, 25, 25);
+    padding: 28px 36px 28px;
+    max-width: 500px;
+    width: 92vw;
+    box-shadow: 6px 6px 0px rgb(25, 25, 25);
+    font-family: 'Bangers', sans-serif;
+}
+
+#tutorial-title {
+    font-family: 'Bangers', sans-serif;
+    font-size: 32px;
+    letter-spacing: 4px;
+    text-align: center;
+    margin: 0 0 20px 0;
+    color: rgb(17, 17, 17);
+}
+
+#tutorial-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.tut-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+}
+
+.tut-num {
+    font-family: 'Bangers', sans-serif;
+    font-size: 48px;
+    color: rgb(17, 17, 17);
+    line-height: 1;
+    min-width: 36px;
+    text-align: center;
+    margin-top: 2px;
+}
+
+.tut-step p {
+    font-family: 'Bangers', sans-serif;
+    font-size: 22px;
+    letter-spacing: 1px;
+    color: rgb(17, 17, 17);
+    margin: 0;
+    line-height: 1.4;
+}
+
+.tut-step p .hl {
+    background: rgb(67, 163, 88);
+    color: white;
+    padding: 0 5px;
+    border-radius: 3px;
+}
+
+#tutorial-close {
+    display: block;
+    margin: 24px auto 0;
+    padding: 10px 38px;
+    font-family: 'Bangers', sans-serif;
+    font-size: 22px;
+    letter-spacing: 2px;
+    background: rgb(67, 163, 88);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s;
+    box-shadow: 3px 3px 0px rgba(0,0,0,0.5);
+}
+#tutorial-close:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0px rgba(0,0,0,0.6);
+}
+#tutorial-close:active {
+    transform: translate(1px, 1px);
+    box-shadow: 1px 1px 0px rgba(0,0,0,0.4);
+}
 #tutorial-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(18, 14, 10, 0.78);
+    background: rgba(18, 14, 10, 0.85);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 9999;
-    opacity: 1;
     transition: opacity 0.35s ease;
 }
 #tutorial-overlay.hidden {
     opacity: 0;
     pointer-events: none;
-}
-
-#tutorial-card {
-    background: rgb(250, 250, 225);
-    border: 4px solid rgb(25, 25, 25);
-    border-radius: 16px;
-    padding: 28px 32px 24px;
-    max-width: 860px;
-    width: 92vw;
-    box-shadow: 6px 6px 0px rgb(25, 25, 25);
-    font-family: 'Lato', sans-serif;
-}
-
-#tutorial-title {
-    font-family: 'Comfortaa', sans-serif;
-    font-size: 26px;
-    font-weight: 700;
-    text-align: center;
-    margin: 0 0 22px 0;
-    color: rgb(25, 25, 25);
-    letter-spacing: 3px;
-}
-
-#tutorial-steps {
-    display: flex;
-    gap: 14px;
-    justify-content: center;
-    flex-wrap: wrap;
-}
-
-.tut-step {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    width: 170px;
-}
-
-.tut-preview {
-    width: 100%;
-    height: 120px;
-    border: 3px dashed rgba(25, 25, 25, 0.35);
-    border-radius: 12px;
-    background: rgba(69, 183, 209, 0.08);
-    box-sizing: border-box;
-    flex-shrink: 0;
-}
-
-.tut-step p {
-    font-family: 'Lato', sans-serif;
-    font-size: 13px;
-    text-align: center;
-    margin: 0;
-    color: rgb(35, 35, 35);
-    line-height: 1.45;
-}
-
-#tutorial-close {
-    display: block;
-    margin: 22px auto 0;
-    padding: 10px 38px;
-    font-family: 'Comfortaa', sans-serif;
-    font-size: 16px;
-    font-weight: 700;
-    letter-spacing: 1px;
-    background: rgb(25, 25, 25);
-    color: rgb(250, 250, 225);
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: transform 0.1s, box-shadow 0.1s;
-    box-shadow: 3px 3px 0px rgba(25,25,25,0.4);
-}
-#tutorial-close:hover {
-    transform: translate(-1px, -1px);
-    box-shadow: 4px 4px 0px rgba(25,25,25,0.5);
-}
-#tutorial-close:active {
-    transform: translate(1px, 1px);
-    box-shadow: 1px 1px 0px rgba(25,25,25,0.4);
 }
