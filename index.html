@@ -19,7 +19,7 @@
         <link rel="stylesheet" href="style.css" /><!-- COMBINE -->
     </head> 
     <body>
-        <div id="tutorial-overlay">
+        <div id="tutorial-overlay" class="hidden">
             <div id="tutorial-card">
                 <h2 id="tutorial-title">HOW TO PLAY</h2>
                 <div id="tutorial-steps">
@@ -86,22 +86,6 @@
     <script>
 (function Application() {
     let inTutorial = true;
-    (function initTutorial() {
-        const overlay = document.getElementById('tutorial-overlay');
-        const closeBtn = document.getElementById('tutorial-close');
-        const SEEN_KEY = 'axh-coc-tutorial-seen';
-        if (localStorage.getItem(SEEN_KEY)) {
-            overlay.classList.add('hidden');
-            inTutorial = false;
-            return;
-        }
-
-        closeBtn.addEventListener('click', () => {
-            overlay.classList.add('hidden');
-            localStorage.setItem(SEEN_KEY, '1');
-            inTutorial = false;
-        });
-    })();
 
     const pixelArtColors = ["#D1A593", "#6BCB77", "#45B7D1", "#271232"];
     
@@ -120,7 +104,7 @@
             ctx.lineJoin = "round";
             this.prog++;
             ctx.fillStyle = "rgba(18, 18, 18, 1)"
-            ctx.fillRect(0, 0, 600, 600)
+            ctx.fillRect(0, 0, width, height)
             if (this.prog < 200) {
                 this.spdLns.push({
                     x: width / 2 + random(-150, 150),
@@ -142,10 +126,7 @@
             } else if (this.prog > 360) {
                 //replace transition code as needed :)
                 window.scene = "menu";
-                //force menu creation immediately when intro finishes
-                if (!window.menuCreated && !window.opener) {
-                    createMenu();
-                }
+                MenuScreen.init();
             }
 
             for (var i = 0; i < this.spdLns.length; i++) {
@@ -264,7 +245,7 @@
 
 
 
-    window.scene = "load";
+    window.scene = "intro";
 
     /**
      * Convert DOM screen coordinates to canvas (world) coordinates taking CSS
@@ -2757,6 +2738,20 @@
                 case "menu": {
                     ctx.fillStyle = "rgb(5, 5, 25)";
                     ctx.fillRect(0, 0, width, height);
+                    MenuScreen.draw(ctx, width, height, MenuScreen.t);
+                    MenuScreen.t += 0.1;
+                    ctx.fillStyle = "#00000022";
+                    ctx.beginPath();
+                    ctx.rect(width / 2 - 200, height / 2 + 50, 400, 100);
+                    ctx.fill();
+                    ctx.fillStyle = "#ffffff";
+                    ctx.font = "40px Courier";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText("- Click to play -", width / 2, height / 2 + 100);
+                    if (mouse.down) {
+                        scene = "load";
+                    }
                     break;
                 }
                 case "load": {
@@ -2769,6 +2764,24 @@
                         ctx.fillText("Loading", 300, 300);
                     } else {
                         window.scene = "game";
+                        App.call(this);
+                        (function initTutorial() {
+                            const overlay = document.getElementById('tutorial-overlay');
+                            const closeBtn = document.getElementById('tutorial-close');
+                            const SEEN_KEY = 'axh-coc-tutorial-seen';
+                            if (localStorage.getItem(SEEN_KEY)) {
+                                inTutorial = false;
+                                return;
+                            } else {
+                                overlay.classList.remove('hidden');
+                            }
+
+                            closeBtn.addEventListener('click', () => {
+                                overlay.classList.add('hidden');
+                                localStorage.setItem(SEEN_KEY, '1');
+                                inTutorial = false;
+                            });
+                        })();
                     }
                     break;
                 }
