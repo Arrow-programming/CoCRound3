@@ -93,7 +93,7 @@ let isMuted = false;
 async function initAudio() {
     gameAudio = new AudioBuffer();
     try {
-        await gameAudio.setBase64String("data:audio/mpeg;base64," + dungeonMusic);
+        await gameAudio.setBase64String("data:audio/mpeg;base64," + matchMusic);
         gameAudio.setVolume(1);
         gameAudio.play();
     } catch (e) {

@@ -12,7 +12,7 @@
         <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@300..700" rel="stylesheet">
         <link rel='stylesheet' href='https://fonts.googleapis.com/css2?family=Lato&family=Material+Icons&display=swap'>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/gh/Arrow-programming/base64/dungeon.js"></script>
+        <script src="https://cdn.jsdelivr.net/gh/Arrow-programming/base64/matchMusic.js"></script>
         <!--The page title-->
         <title>New Webpage ;)</title>
         <!--CSS Styling-->
@@ -49,6 +49,36 @@
             </div>
         </div>
         <canvas id = "thumb"></canvas>
+        <!-- Tutorial Popup -->
+        <div id="tutorial-overlay">
+            <div id="tutorial-card">
+                <h2 id="tutorial-title">HOW TO PLAY</h2>
+            <div id="tutorial-steps">
+
+            <div class="tut-step">
+                <div class="tut-preview"></div>
+                <p>Match three tiles to add them to your pool</p>
+            </div>
+
+            <div class="tut-step">
+                <div class="tut-preview"></div>
+                <p>Bombs can be made with 4 tiles</p>
+            </div>
+
+            <div class="tut-step">
+                <div class="tut-preview"></div>
+                <p>Place tiles from the pool into the grid</p>
+            </div>
+
+            <div class="tut-step">
+                <div class="tut-preview"></div>
+                <p>Tiles score based on neighbors of the same color, or above and below</p>
+            </div>
+
+            </div>
+                <button id="tutorial-close">Let's Play!</button>
+            </div>
+        </div>
     </body>
     
     <script src="htmlSetUp.js"></script>
@@ -370,6 +400,7 @@
                  * Render the tile to the global `ctx` canvas context.
                  * @param {number} tileSize - Size used for drawing calculations.
                  * @param {boolean} [isDragging=false] - Whether the tile is currently being dragged (affects styling).
+                 * @param {boolean} [grayed=false] - Whether the tile is grayed.
                  * @returns {void}
                  */
                 // draw(tileSize, isDragging = false) {
@@ -421,7 +452,7 @@
                 //     ctx.restore();
                 //     ctx.globalAlpha = 1;
                 // }
-                draw(tileSize, isDragging = false) {
+                draw(tileSize, isDragging = false, grayed = false) {
                     PixelArt.draw(
                         ctx,
                         this.colorIndex,
@@ -430,7 +461,8 @@
                         tileSize,
                         this.opacity,
                         this.scale,
-                        isDragging
+                        isDragging,
+                        grayed
                     );
                 }
             }
@@ -1449,34 +1481,11 @@
                         this.rows2 * this.tileSize + 10
                     );
 
-                    
-                    //draw grid lines
-                    //ctx.strokeStyle = "rgba(10, 10, 150, 0.3)";
-                    //ctx.lineWidth = 1;
-                    // for (let i = 0; i <= this.cols; i++) {  
-                    //     ctx.beginPath();
-                    //     ctx.moveTo(this.boardX + i * this.tileSize, this.boardY);
-                    //     ctx.lineTo(
-                    //         this.boardX + i * this.tileSize,
-                    //         this.boardY + (i <= this.cols1 ? this.rows : this.rows2) * this.tileSize
-                    //     );
-                    //     ctx.stroke();
-                    // }      
-                    // for (let i = 0; i <= this.rows1; i++) {
-                    //     ctx.beginPath();
-                    //     ctx.moveTo(this.boardX, this.boardY + i * this.tileSize);
-                    //     ctx.lineTo(
-                    //         this.boardX + (i <= this.rows2 ? this.cols : this.cols1) * this.tileSize,
-                    //         this.boardY + i * this.tileSize
-                    //     );
-                    //     ctx.stroke();
-                    // }
-
                     //draw tiles
                     this.iterate((row, col) => {
                         const tile = this.tiles[row][col];
                         if (tile && tile != this.draggedTile && !tile.toBePooled) {
-                            tile.draw(this.tileSize, false);
+                            tile.draw(this.tileSize, false, window.App.matchedYet);
                         }
                     });
 
@@ -1488,20 +1497,14 @@
                     const poolHeight = this.tileSize + 8;
                     ctx.save();
                     ctx.fillStyle = "rgba(224, 221, 211, 255)";
-                    ctx.strokeStyle = "rgba(25, 25, 25)"; 
+                    const red = window.App?.turnTimer?.timeLeft <= 5;
+                    ctx.strokeStyle = red ? "rgba(255, 25, 25)" : "rgba(25, 25, 25)"; 
                     ctx.lineWidth = 4;
                     ctx.fillRect(this.boardX - 5, poolTop, totalBoardWidth + 10, poolHeight + 5);
                     ctx.strokeRect(this.boardX - 5, poolTop, totalBoardWidth + 10, poolHeight + 5);
                     ctx.stroke(); 
                     ctx.globalAlpha = 1; 
                     ctx.restore();
-
-                    //draw pooled tiles
-                    // for (let i = 0; i < this.pool.tiles.length; i++) {
-                    //     const tile = this.pool.tiles[i];
-                    //     //ensure pooled tiles use pool visuals and are drawn above
-                    //     tile.draw(this.tileSize, false);
-                    // }
 
                     //draw invalid swap feedback
                     if (this.invalidSwap && this.invalidSwapTile) {
@@ -1629,6 +1632,10 @@
                             tile.targetX = originalTile.x;
                             tile.targetY = originalTile.y;
                             tile.isMoving = true;
+                        } else {
+                            // otherwise prevent future matched in the same turn
+                            window.App.matchedYet = true;
+                            window.console.log("HI")
                         }
 
                         if (this.draggedTile) this.draggedTile.beingDragged = false;
@@ -1840,7 +1847,32 @@
 
                     const currentTurn = window.App ? window.App.turn : 0;
 
-                    const neighbors = [ /* ...unchanged... */ ];
+                    const neighbors = [
+                        {
+                            dc: -1,
+                            dr: 0,
+                            mySide: 'left',
+                            theirSide: 'right'
+                        },
+                        {
+                            dc: 1,
+                            dr: 0,
+                            mySide: 'right',
+                            theirSide: 'left'
+                        },
+                        {
+                            dc: 0,
+                            dr: -1,
+                            mySide: 'up',
+                            theirSide: 'down'
+                        },
+                        {
+                            dc: 0,
+                            dr: 1,
+                            mySide: 'down',
+                            theirSide: 'up'
+                        }
+                    ];
 
                     let numNeighbors = 0;
                     for (const n of neighbors) {
@@ -1849,7 +1881,7 @@
                         const neighbor = this.getTile(nc, nr);
                         if (!neighbor) continue;
                         // if tile is placed less than 2 turns ago
-                        if ((window.App?.turn ?? 0) - neighbor.turn < 2) {
+                        if ((window.App?.turn ?? 0) - neighbor.turn <= 2) {
                             numNeighbors++;
                         }
                         if (
@@ -1874,11 +1906,6 @@
                     for (const entry of this.tiles) {
                         if (!entry.tile) continue;
                         entry.tile.animate(dt);
-
-                        //fade out tiles placed 2+ turns ago
-                        const age = currentTurn - (entry.tile.placedOnTurn ?? currentTurn);
-                        const targetOpacity = age >= 2 ? 0.25 : 1;
-                        entry.tile.opacity += (targetOpacity - entry.tile.opacity) * Math.min(dt * 4, 1);
                     }
                 }
 
@@ -1933,7 +1960,8 @@
                     
                     ctx.save();
                     ctx.setLineDash([]);
-                    ctx.strokeStyle = 'rgba(25, 25, 25)';
+                    const red = window.App?.turnTimer?.timeLeft <= 5;
+                    ctx.strokeStyle = red ? "rgba(255, 25, 25)" : "rgba(25, 25, 25)"; 
                     ctx.lineWidth = 8;
 
                     ctx.beginPath(); 
@@ -2064,6 +2092,8 @@
                     const g = Math.min(ratio * 255 * 2, 255);
                     ctx.save();
                     ctx.fillStyle = `rgb(${r}, ${g}, 0)`;
+                    const red = window.App?.turnTimer?.timeLeft <= 5;
+                    ctx.strokeStyle = red ? "rgba(255, 25, 25)" : "rgba(25, 25, 25)"; 
                     ctx.lineWidth = 4;
                     ctx.beginPath();
                     ctx.rect(width / 2 - 200, 20, 400 * ratio, 13);
@@ -2099,8 +2129,9 @@
             this.rightGrid = new GridController(gridX, gridY, rightBoardCols * TS, (leftBoardRows - rightBoardRows) * TS, TS);
             this.tileBoard = new TileBoard(leftBoardCols, leftBoardRows, rightBoardCols, rightBoardRows, leftBoardX, BOARD_Y, TS);
 
-            this.turnTimer = new TurnTimer(40);
+            this.turnTimer = new TurnTimer(120);
             this.turn = storedData.turn ?? 0;
+            this.matchedYet = storedData.matchedYet ?? false;
 
             //trigger a one-time cascade check on the board so seam matches get cleared at startup(?)
             this.tileBoard.swapInProgress = true;
@@ -2587,8 +2618,8 @@
             const b = this.tileBoard;
             if (b) {
                 b.update(dt);
-                b.pool.update(dt); 
-                b.handleInput();
+                b.pool.update(dt);
+                if (!this.matchedYet) b.handleInput();
                 b.pool.handleInput();
                 b.draw();
             }
@@ -2612,13 +2643,16 @@
             if (this.turnTimer.timeLeft <= 0) {
                 this.turnTimer.reset();
                 this.turn ++;
+                this.matchedYet = false;
+                b.pool.tiles = [];
             }
 
             // single unified border around everything
             const b2 = this.tileBoard;
             if (b2 && this.rightGrid) {
                 ctx.save();
-                ctx.strokeStyle = 'rgba(25, 25, 25)';
+                const red = window.App?.turnTimer?.timeLeft <= 5;
+                ctx.strokeStyle = red ? "rgba(255, 25, 25)" : "rgba(25, 25, 25)";
                 ctx.lineWidth = 4;
                 ctx.strokeRect(
                     b2.boardX - 5,
@@ -3017,6 +3051,7 @@
                 ),
                 turn: window.App.turn,
                 timeUsed: window.App.turnTimer.duration - window.App.turnTimer.timeLeft,
+                matchedYet: window.App.matchedYet,
             };
             
             storage.setItem("axh-coc-round-3--data", JSON.stringify(data));
@@ -3026,6 +3061,18 @@
             alert("Oops, something went wrong, and we don't know what. :/");
         }
     });
+
+    document.querySelector("#endturn").addEventListener("click", () => {
+        if (window.App.tileBoard.pool.tiles.length) {
+            alert("You still have tiles in the tile pool. Clear them before ending your turn!");
+        } else if (window.App.matchedYet) {
+            alert("You haven't made a match yet. Make one before ending your turn!");
+        } else {
+            window.App.turnTimer.reset();
+            window.App.turn ++;
+            window.App.matchedYet = false;
+        }
+    })
 
     document.querySelector("#reload").addEventListener("click", () => {
         const prmpt = "Are you sure you want to reset? You will lose all your progress.";
@@ -3056,6 +3103,21 @@
 
 
     firstFrame = false;
+
+    (function initTutorial() {
+        const overlay = document.getElementById('tutorial-overlay');
+        const closeBtn = document.getElementById('tutorial-close');
+        const SEEN_KEY = 'axh-coc-tutorial-seen';
+        if (localStorage.getItem(SEEN_KEY)) {
+            overlay.classList.add('hidden');
+            return;
+        }
+
+        closeBtn.addEventListener('click', () => {
+            overlay.classList.add('hidden');
+            localStorage.setItem(SEEN_KEY, '1');
+        });
+    })();
 
     return {
         Application,
