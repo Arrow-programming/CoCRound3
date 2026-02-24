@@ -514,6 +514,7 @@
                     tile.poolIndex = slot;
                     tile.inPool = true;
                     tile.toBePooled = false;
+                    tile.toBeDeleted = false;
                     tile.beingDragged = false;
                     tile.matched = false;
                     tile.scale = 1;
@@ -1078,69 +1079,53 @@
 
                     matchedComponents.forEach(component => component.forEach(tile => {
                         tile.matched = true;
-                        tile.toBePooled = true;
+                        if (tile.colorIndex == 3) tile.toBeDeleted = true; else tile.toBePooled = true;
                         tile.inPool = false;
                         tile.isMoving = false;
                     }));
 
                     if (window.App) window.App.addShake(matchedComponents.length * 2.4);
 
-                    const matches = matchedComponents.flat();
+                    const intoPool = new Set(matchedComponents.flat());
 
-                    // add the effects of bomb tiles
-                    matches.forEach(tile => {
-                        if (tile.colorIndex === 3) {
-                            // TODO: make bomb tile completely disappear
-                            // TODO: make tiles removed by bomb tile appear in tile pool
-                            for (let row = tile.row - 2; row <= tile.row + 2; row ++) {
-                                for (let col = tile.col - 2; col <= tile.col + 2; col ++) {
-                                    if (this.inBounds(row, col)) {
-                                        const neighbor = this.tiles[row][col];
-                                        if (!(neighbor in matches)) {
-                                            matches.push(neighbor);
-                                        }
-                                    }
+                    // Bombs
+                    let bombsInMatch = [...intoPool].filter(tile => tile.colorIndex === 3);
+                    bombsInMatch.forEach(bomb => {
+                        // pixel-art explosion effect
+                        PixelArtExploder.explode(bomb, this.tileSize, window.App.matchBurst, 3);
+                        //burst from bomb edges
+                        const color = pixelArtColors[3];
+                        const origins = [
+                            [bomb.x, bomb.y - this.tileSize / 2],
+                            [bomb.x, bomb.y + this.tileSize / 2],
+                            [bomb.x - this.tileSize / 2, bomb.y],
+                            [bomb.x + this.tileSize / 2, bomb.y],
+                        ];
+                        for (const [ox, oy] of origins) window.App.placeBurst.add(ox, oy, color);
+                        // radius clear
+                        for (let r = bomb.row - 2; r <= bomb.row + 2; r++) {
+                            for (let c = bomb.col - 2; c <= bomb.col + 2; c++) {
+                                if (this.inBounds(r, c) && this.tiles[r][c]) {
+                                    intoPool.add(this.tiles[r][c]);
                                 }
                             }
-                            const color = pixelArtColors[3];
-                            const cs = this.tileSize;
-
-                            //from edges
-                            const origins = [
-                                [tile.x + cs / 2, tile.y],
-                                [tile.x + cs / 2, tile.y + cs],
-                                [tile.x, tile.y + cs / 2],
-                                [tile.x + cs, tile.y + cs / 2],
-                            ];
-                            for (const [ox, oy] of origins) {
-                                window.App.placeBurst.add(ox, oy, color);
-                            }
                         }
+                        intoPool.delete(bomb);
                     });
 
-                    //count how many tiles are heading to each owner's pool
-                    const ownerCounts = new Map();
-                    matches.forEach(tile => {
-                        const owner = tile.board || this;
-                        ownerCounts.set(owner, (ownerCounts.get(owner) ?? 0) + 1);
-                        window.console.log(ownerCounts.get(owner));
-                    });
-
-                    const ownerSlots = new Map();
-                    matches.forEach(tile => {
-                        const owner = tile.board || this;
-                        const slot = ownerSlots.has(owner) ? ownerSlots.get(owner) : owner.pool.tiles.length;
-                        ownerSlots.set(owner, slot + 1);
-
+                    const total = this.pool.tiles.length + intoPool.size;
+                    let slot = this.pool.tiles.length;
+                    intoPool.forEach(tile => {
                         //final total current pool size and all tiles heading here
-                        const total = owner.pool.tiles.length + ownerCounts.get(owner);
-                        const t = owner.pool.getTarget(slot, total);
+                        const t = this.pool.getTarget(slot, total);
+                        slot ++;
 
                         tile.targetX = t.x;
                         tile.targetY = t.y;
                         tile.isMoving = true;
                         tile.rotation = 0;
-                        owner.swapInProgress = true;
+                        tile.toBePooled = true;
+                        this.swapInProgress = true;
                     });
 
                     // If the matched components have 4 or more tiles in them, create a bomb tile
@@ -1148,6 +1133,7 @@
                         if (component.length >= 4) {
                             const rand = component[Math.floor(Math.random() * component.length)];
                             this.tiles[rand.row][rand.col] = new Tile(rand.col, rand.row, 3);
+                            this.tiles[rand.row][rand.col].updatePosition(this.tileSize, this.boardX, this.boardY);
                         }
                     });
 
@@ -1341,11 +1327,11 @@
                     this.iterate((row, col) => this.tiles[row][col].animate(dt));
 
                     // check for tiles that finished animating into the pool and move them from grid to pool
-                    let pooledThisFrame = [];
+                    let removedThisFrame = [];
                     this.iterate((row, col) => {
                         const t = this.tiles[row][col];
                         if (t && t.toBePooled && !t.isMoving && !t.inPool) {
-                            //remove from grid and add to pool
+                            // remove from grid and add to pool
                             this.tiles[row][col] = null;
                             t.inPool = true;
                             t.toBePooled = false;
@@ -1353,11 +1339,15 @@
                             t.x = t.targetX;
                             t.y = t.targetY;
                             this.pool.add(t);
-                            pooledThisFrame.push(t);
+                            removedThisFrame.push(t);
+                        } else if (t && t.toBeDeleted) {
+                            // remove from grid and add to pool
+                            this.tiles[row][col] = null;
+                            removedThisFrame.push(t);
                         }
                     });
 
-                    if (pooledThisFrame.length > 0) {
+                    if (removedThisFrame.length > 0) {
                         this.applyGravity();
                         this.fillGaps();
                         // don't interupt 
@@ -2428,6 +2418,92 @@
             }
         }
         const particlePool = new ParticlePool(400);
+
+        /**
+         * Explodes a tile's pixel art by sampling its rendered pixels and firing each
+         * one outward as an individual particle. Works by rendering the tile to a tiny
+         * offscreen canvas via PixelArt.draw(), reading ImageData, then spawning one
+         * particle per sampled pixel cluster.
+         */
+        class PixelArtExploder {
+
+            /**
+             * Fire the pixel-art explosion for a single tile.
+             *
+             * @param {Tile} tile - The tile to explode
+             * @param {number} tileSize - Rendered size of the tile in canvas px.
+             * @param {ParticleSystem} particleSystem - System that owns the particle array
+             * @param {number} [sampleStep=3] - Sample one pixel cluster per N×N block.
+             */
+            static explode(tile, tileSize, particleSystem, sampleStep = 3) {
+
+                //offscreen canvas
+                const offscreen = document.createElement('canvas');
+                offscreen.width  = tileSize;
+                offscreen.height = tileSize;
+                const offCtx = offscreen.getContext('2d');
+
+                //center and draw
+                PixelArt.draw(
+                    offCtx,
+                    tile.colorIndex,
+                    tile.sides,
+                    tileSize / 2,
+                    tileSize / 2,
+                    tileSize,
+                    1,
+                    1,
+                    false
+                );
+
+                //read pixel daata
+                const imageData = offCtx.getImageData(0, 0, tileSize, tileSize);
+                const pixels = imageData.data;
+                const centerX = tile.x;
+                const centerY = tile.y;
+
+                for (let py = 0; py < tileSize; py += sampleStep) {
+                    for (let px = 0; px < tileSize; px += sampleStep) {
+                        const i = (py * tileSize + px) * 4;
+                        const r = pixels[i];
+                        const g = pixels[i + 1];
+                        const b = pixels[i + 2];
+                        const a = pixels[i + 3];
+
+                        //skip bg pixels
+                        if (a < 40) continue;
+
+                        //pixel's offset from the tile center
+                        const dx = px - tileSize / 2;
+                        const dy = py - tileSize / 2;
+                        const dist = Math.hypot(dx, dy) || 1;
+
+                        //base speed ramps up with distance from center so the
+                        //outer ring flies further than the core
+                        const baseSpeed = 50 + (dist / (tileSize / 2)) * 180 + Math.random() * 60;
+                        const vx = (dx / dist) * baseSpeed * (0.6 + Math.random() * 0.8) / 10;
+                        const vy = (dy / dist) * baseSpeed * (0.6 + Math.random() * 0.8) / 10- Math.random() * 4;
+
+                        particleSystem.particles.push(particlePool.get({
+                            position: {
+                                //posiotion of pixel
+                                x: centerX - tileSize / 2 + px,
+                                y: centerY - tileSize / 2 + py
+                            },
+                            velocity:{ x: vx, y: vy },
+                            size: sampleStep + Math.random() * 2,
+                            color: `rgb(${r},${g},${b})`,
+                            life: 55 + Math.random() * 65,
+                            acceleration: { x: (Math.random() - 0.5) * 0.3, y: 5 },
+                            angle: Math.random() * 360,
+                            rotation: (Math.random() - 0.5) * 700,
+                            clear: true,
+                            opacity: 1
+                        }));
+                    }
+                }
+            }
+        }
 
         /**
          * coordinates the creation, updating, and pooled recycling of multiple particles
