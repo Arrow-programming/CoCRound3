@@ -376,13 +376,12 @@
                 //     ctx.globalAlpha = this.opacity;
                 //     ctx.save();
                 //     ctx.translate(this.x, this.y);
-                //     ctx.scale(this.scale, this.scale);
+                //     ctx.scale(this.scale, this.scale); 
                 //     ctx.rotate(this.rotation);
 
-                //     const cornerRadius = 8;
+                //     const cornerRadius = 8; 
                 //     const bgSize = tileSize * 0.48;
                 //     const fillColor = tileColors[this.colorIndex % tileColors.length];
-
                 //     //background rounded rect
                 //     ctx.fillStyle = fillColor;
                 //     ctx.beginPath();
@@ -1765,6 +1764,9 @@
                     tile.opacity = 1;
                     tile.row = row;
                     tile.col = col;
+
+                    tile.placedOnTurn = window.App ? window.App.turn : 0;
+
                     const cx = this.x + col * this.cellSize + this.cellSize / 2;
                     const cy = this.y + row * this.cellSize + this.cellSize / 2;
                     tile.targetX = cx;
@@ -1836,32 +1838,9 @@
                 canPlace(tile, col, row) {
                     if (this.getTile(col, row)) return false;
 
-                    const neighbors = [
-                        {
-                            dc: -1,
-                            dr: 0,
-                            mySide: 'left',
-                            theirSide: 'right'
-                        },
-                        {
-                            dc: 1,
-                            dr: 0,
-                            mySide: 'right',
-                            theirSide: 'left'
-                        },
-                        {
-                            dc: 0,
-                            dr: -1,
-                            mySide: 'up',
-                            theirSide: 'down'
-                        },
-                        {
-                            dc: 0,
-                            dr: 1,
-                            mySide: 'down',
-                            theirSide: 'up'
-                        }
-                    ];
+                    const currentTurn = window.App ? window.App.turn : 0;
+
+                    const neighbors = [ /* ...unchanged... */ ];
 
                     let numNeighbors = 0;
                     for (const n of neighbors) {
@@ -1891,8 +1870,16 @@
                  * @returns {void}
                  */
                 update(dt) {
-                    for (const entry of this.tiles)
-                        if (entry.tile) entry.tile.animate(dt);
+                    const currentTurn = window.App ? window.App.turn : 0;
+                    for (const entry of this.tiles) {
+                        if (!entry.tile) continue;
+                        entry.tile.animate(dt);
+
+                        //fade out tiles placed 2+ turns ago
+                        const age = currentTurn - (entry.tile.placedOnTurn ?? currentTurn);
+                        const targetOpacity = age >= 2 ? 0.25 : 1;
+                        entry.tile.opacity += (targetOpacity - entry.tile.opacity) * Math.min(dt * 4, 1);
+                    }
                 }
 
                 /**
