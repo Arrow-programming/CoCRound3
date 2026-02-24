@@ -33,6 +33,7 @@
                 <span class='material-icons' id='reload'>refresh</span>
                 <span class='material-icons' id='back'>arrow_back</span>
                 <span class='material-icons' id='save'>save</span>
+                <span class='material-icons' id='endturn'>check</span>
             </div>
         </div>
         <!--All the stinkn' UI-->
@@ -250,8 +251,6 @@
         const App = function(config) {
             //self represent
             this.app = App;
-
-
 
             /**
              * Represents a single tile in the grid. Stores visual state and
@@ -2139,6 +2138,59 @@
                 }
             }
 
+            /**
+             * TurnTimer: basically a timer that tells you how much time left you have in
+             * a turn, among a few other cool things
+             */
+            class TurnTimer {
+                /** Constructs an instance of TurnTimer.
+                 * 
+                 * @constructor
+                 * @param {number} duration - Duration in seconds
+                 */
+                constructor(duration) {
+                    this.lastReset = Date.now();
+                    this.duration = duration;
+                }
+
+                /** Returns the amount of time left in seconds.
+                 * 
+                 * @returns {number}
+                 */
+                get timeLeft() {
+                    return this.duration - (Date.now() - this.lastReset) / 1000;
+                }
+
+                /** Resets the timer.
+                 * 
+                 * @returns {void}
+                 */
+                reset() {
+                    this.lastReset = Date.now();
+                }
+
+                /** Displays the timer.
+                 * 
+                 * @returns {void}
+                 */
+                draw() {
+                    const ratio = Math.max(this.timeLeft / this.duration, 0);
+                    const r = Math.min((1 - ratio) * 255 * 2, 255);
+                    const g = Math.min(ratio * 255 * 2, 255);
+                    ctx.save();
+                    ctx.fillStyle = `rgb(${r}, ${g}, 0)`;
+                    ctx.lineWidth = 4;
+                    ctx.beginPath();
+                    ctx.rect(width / 2 - 200, 20, 400 * ratio, 13);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.rect(width / 2 - 200, 20, 400, 13);
+                    ctx.stroke();
+                    ctx.beginPath(); // apparently this does something
+                    ctx.restore();
+                }
+            }
+
             const GAP = 4;
             const TS = Math.floor(Math.min(width, height) / 12);
             const BOARD_Y = TS + 32;
@@ -2161,6 +2213,9 @@
 
             this.rightGrid = new GridController(gridX, gridY, rightBoardCols * TS, (leftBoardRows - rightBoardRows) * TS, TS);
             this.tileBoard = new TileBoard(leftBoardCols, leftBoardRows, rightBoardCols, rightBoardRows, leftBoardX, BOARD_Y, TS);
+
+            this.turnTimer = new TurnTimer(40);
+            this.turn = 0;
 
             //trigger a one-time cascade check on the board so seam matches get cleared at startup(?)
             this.tileBoard.swapInProgress = true;
@@ -2665,6 +2720,13 @@
             //pool tiles drawn after grid so they always render on top
             if (b) {
                 b.drawPool();
+            }
+
+            this.turnTimer.draw();
+
+            if (this.turnTimer.timeLeft <= 0) {
+                this.turnTimer.reset();
+                this.turn ++;
             }
 
             // single unified border around everything
