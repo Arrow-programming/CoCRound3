@@ -1647,7 +1647,6 @@
                         } else {
                             // otherwise prevent future matched in the same turn
                             window.App.matchedYet = true;
-                            window.console.log("HI")
                         }
 
                         if (this.draggedTile) this.draggedTile.beingDragged = false;
@@ -1829,6 +1828,52 @@
                 placeTile(tile, col, row) {
                     if (!this.canPlace(tile, col, row)) return false;
                     this._placeInternal(tile, col, row);
+                    if (tile.colorIndex === 3) {
+                        // super rare bomb tile, obtained by blowing up a bomb tile in
+                        // matching area w/ another bomb tile
+                        // reward lol
+                        window.App.score += 20;
+                    } else {
+                        // my brain is too dead rn to use the canPlace stuff for this so...
+                        const neighbors = [
+                            {
+                                dc: -1,
+                                dr: 0,
+                                mySide: 'left',
+                                theirSide: 'right'
+                            },
+                            {
+                                dc: 1,
+                                dr: 0,
+                                mySide: 'right',
+                                theirSide: 'left'
+                            },
+                            {
+                                dc: 0,
+                                dr: -1,
+                                mySide: 'up',
+                                theirSide: 'down'
+                            },
+                            {
+                                dc: 0,
+                                dr: 1,
+                                mySide: 'down',
+                                theirSide: 'up'
+                            }
+                        ];
+
+                        let numNeighborsSameColor = 0;
+                        for (const n of neighbors) {
+                            const nc = col + n.dc;
+                            const nr = row + n.dr;
+                            const neighbor = this.getTile(nc, nr);
+                            if (!neighbor) continue;
+                            if (neighbor.tile.colorIndex === tile.colorIndex) {
+                                numNeighborsSameColor ++;
+                            }
+                        }
+                        window.App.score += 5 + numNeighborsSameColor;
+                    }
                     return true;
                 }
 
@@ -2108,12 +2153,17 @@
                     ctx.strokeStyle = red ? "rgba(255, 25, 25)" : "rgba(25, 25, 25)"; 
                     ctx.lineWidth = 4;
                     ctx.beginPath();
-                    ctx.rect(width / 2 - 200, 20, 400 * ratio, 13);
+                    ctx.rect(width / 2 - 200, 15, 400 * ratio, 20);
                     ctx.fill();
                     ctx.beginPath();
-                    ctx.rect(width / 2 - 200, 20, 400, 13);
+                    ctx.rect(width / 2 - 200, 15, 400, 20);
                     ctx.stroke();
                     ctx.beginPath(); // apparently this does something
+                    ctx.fillStyle = "#000000";
+                    ctx.font = "15px Arial";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText("Score: " + window.App.score, width / 2, 25);
                     ctx.restore();
                 }
             }
@@ -2144,6 +2194,7 @@
             this.turnTimer = new TurnTimer(120);
             this.turn = storedData.turn ?? 0;
             this.matchedYet = storedData.matchedYet ?? false;
+            this.score = storedData.score ?? 0;
 
             //trigger a one-time cascade check on the board so seam matches get cleared at startup(?)
             this.tileBoard.swapInProgress = true;
@@ -2653,6 +2704,9 @@
             this.turnTimer.draw();
 
             if (this.turnTimer.timeLeft <= 0) {
+                this.score -= b.pool.tiles.length; // penalize tiles still in pool
+                // if you went afk and didn't match in a turn, screw you lol
+                if (!this.matchedYet) this.score -= 20;
                 this.turnTimer.reset();
                 this.turn ++;
                 this.matchedYet = false;
@@ -3067,6 +3121,7 @@
                 turn: window.App.turn,
                 timeUsed: window.App.turnTimer.duration - window.App.turnTimer.timeLeft,
                 matchedYet: window.App.matchedYet,
+                score: window.App.score,
             };
             
             storage.setItem("axh-coc-round-3--data", JSON.stringify(data));
